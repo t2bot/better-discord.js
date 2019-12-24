@@ -59,9 +59,9 @@ exports.DefaultOptions = {
     large_threshold: 250,
     compress: require('os').platform() !== 'browser',
     properties: {
-      $os: process ? process.platform : 'discord.js',
-      $browser: 'discord.js',
-      $device: 'discord.js',
+      $os: process ? process.platform : 'better-discord.js',
+      $browser: 'better-discord.js',
+      $device: 'better-discord.js',
       $referrer: '',
       $referring_domain: '',
     },

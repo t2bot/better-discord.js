@@ -1,6 +1,6 @@
 /// <reference path='index.d.ts' />
 
-import { Collector, Message, CollectorFilter, Client, CollectorHandler, MessageReaction, Collection, User, ReactionCollectorOptions, Snowflake } from 'discord.js';
+import { Collector, Message, CollectorFilter, Client, CollectorHandler, MessageReaction, Collection, User, ReactionCollectorOptions, Snowflake } from 'better-discord.js';
 
 const client = new Client({
 	disableEveryone: false,

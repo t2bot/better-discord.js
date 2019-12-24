@@ -1,6 +1,7 @@
 const Action = require('./Action');
 const TextChannel = require('../../structures/TextChannel');
 const VoiceChannel = require('../../structures/VoiceChannel');
+const GroupDMChannel = require('../../structures/GroupDMChannel');
 const CategoryChannel = require('../../structures/CategoryChannel');
 const NewsChannel = require('../../structures/NewsChannel');
 const StoreChannel = require('../../structures/StoreChannel');
@@ -20,12 +21,17 @@ class ChannelUpdateAction extends Action {
       if (ChannelTypes[channel.type.toUpperCase()] !== data.type) {
         // Determine which channel class we're changing to
         let channelClass;
+        let initWithGuild = true;
         switch (data.type) {
           case ChannelTypes.TEXT:
             channelClass = TextChannel;
             break;
           case ChannelTypes.VOICE:
             channelClass = VoiceChannel;
+            break;
+          case ChannelTypes.GROUP_DM:
+            initWithGuild = false;
+            channelClass = GroupDMChannel;
             break;
           case ChannelTypes.CATEGORY:
             channelClass = CategoryChannel;
@@ -39,7 +45,7 @@ class ChannelUpdateAction extends Action {
         }
 
         // Create the new channel instance and copy over cached data
-        const newChannel = new channelClass(channel.guild, data);
+        const newChannel = new channelClass(initWithGuild ? channel.guild : client, data);
         if (channel.messages && newChannel.messages) {
           for (const [id, message] of channel.messages) newChannel.messages.set(id, message);
         }

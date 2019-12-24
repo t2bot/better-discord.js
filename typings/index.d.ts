@@ -5,7 +5,7 @@
 //   Zack Campbell <zajrik@gmail.com> (https://github.com/zajrik)
 // License: MIT
 
-declare module 'discord.js' {
+declare module 'better-discord.js' {
 	import { EventEmitter } from 'events';
 	import { Stream, Readable as ReadableStream } from 'stream';
 	import { ChildProcess } from 'child_process';
@@ -455,6 +455,7 @@ declare module 'discord.js' {
 		constructor(client: Client, data: object);
 		public applicationID: string;
 		public icon: string;
+		public readonly iconURL: string;
 		public lastMessageID: string;
 		public managed: boolean;
 		public messages: Collection<Snowflake, Message>;
