@@ -46,6 +46,20 @@ class ClientUser extends User {
     this.blocked = new Collection();
 
     /**
+     * A Collection of incoming friend requests for the logged in user
+     * <warn>This is only filled when using a user account.</warn>
+     * @type {Collection<Snowflake, User>}
+     */
+    this.incomingFriendRequests = new Collection();
+
+    /**
+     * A Collection of outgoing friend requests for the logged in user
+     * <warn>This is only filled when using a user account.</warn>
+     * @type {Collection<Snowflake, User>}
+     */
+    this.outgoingFriendRequests = new Collection();
+
+    /**
      * A Collection of notes for the logged in user
      * <warn>This is only filled when using a user account.</warn>
      * @type {Collection<Snowflake, string>}
@@ -342,9 +356,20 @@ class ClientUser extends User {
    * @returns {Promise<User>} The user the friend request was sent to
    * @deprecated
    */
-  addFriend(user) {
-    user = this.client.resolver.resolveUser(user);
-    return this.client.rest.methods.addFriend(user);
+  addFriend(userStr) {
+    console.log("---------------");
+    const userSend = this.client.resolver.resolveUser(userStr);
+    console.log(userSend);
+    return this.client.rest.methods.addFriend(userSend ? userSend : userStr).then((user) => {
+      console.log(user);
+      /*if (this.incomingFriendRequests.has(user.id)) {
+        this.incomingFriendRequests.delete(user.id);
+        this.friends.set(user.id, user);
+      } else {
+        this.outgoingFriendRequests.set(user.id, user);
+      }*/
+      return user;
+    });
   }
 
   /**

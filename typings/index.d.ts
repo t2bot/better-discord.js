@@ -237,9 +237,11 @@ declare module 'better-discord.js' {
 		public email: string;
 		public friends: Collection<Snowflake, User>;
 		public guildSettings: Collection<Snowflake, ClientUserGuildSettings>;
+		public incomingFriendRequests: Collection<Snowflake, User>;
 		public mfaEnabled: boolean;
 		public mobile: boolean;
 		public notes: Collection<Snowflake, string>;
+		public outgoingFriendRequests: Collection<Snowflake, User>;
 		public premium: boolean;
 		public settings: ClientUserSettings;
 		public verified: boolean;

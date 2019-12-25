@@ -865,10 +865,15 @@ class RESTMethods {
   }
 
   addFriend(user) {
-    return this.rest.makeRequest('post', Endpoints.User('@me'), true, {
-      username: user.username,
-      discriminator: user.discriminator,
-    }).then(() => user);
+    if (typeof user === 'string') {
+      return this.rest.makeRequest('post', Endpoints.User('@me').relationships, true, {
+        username: user.split('#')[0],
+        discriminator: parseInt(user.split('#')[1], 10),
+      }).then(() => user);
+    } else {
+      return this.rest.makeRequest('put', Endpoints.User('@me').Relationship(user.id), true, {})
+        .then(() => user);
+    }
   }
 
   removeFriend(user) {

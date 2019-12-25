@@ -22,10 +22,14 @@ class ReadyHandler extends AbstractHandler {
 
     for (const relation of data.relationships) {
       const user = client.dataManager.newUser(relation.user);
-      if (relation.type === 1) {
+      if (relation.type === 1) { // friend
         client.user.friends.set(user.id, user);
-      } else if (relation.type === 2) {
+      } else if (relation.type === 2) { // blocked
         client.user.blocked.set(user.id, user);
+      } else if (relation.type === 3) { // incoming friend request
+        client.user.incomingFriendRequests.set(user.id, user);
+      } else if (relation.type === 4) { // outgoing friend request
+        client.user.outgoingFriendRequests.set(user.id, user);
       }
     }
 
