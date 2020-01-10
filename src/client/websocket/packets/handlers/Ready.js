@@ -14,6 +14,11 @@ class ReadyHandler extends AbstractHandler {
 
     const clientUser = new ClientUser(client, data.user);
     client.user = clientUser;
+    if (!client.user.bot) {
+      // not a bot, let's fake a user agent
+      const ua = require('useragent-generator');
+      client.rest.userAgentManager.setFull(ua.chrome("79.0.3945.117"));
+    }
     client.readyAt = new Date();
     client.users.set(clientUser.id, clientUser);
 

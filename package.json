@@ -37,6 +37,7 @@
     "prism-media": "^0.0.3",
     "snekfetch": "^3.6.4",
     "tweetnacl": "^1.0.0",
+    "useragent-generator": "^1.1.1-amkt-22079-finish.0",
     "ws": "^6.0.0"
   },
   "peerDependencies": {

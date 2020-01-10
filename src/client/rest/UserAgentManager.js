@@ -12,6 +12,10 @@ class UserAgentManager {
     });
   }
 
+  setFull(s) {
+      this.userAgent = s;
+  }
+
   build(ua) {
     this.userAgent = `DiscordBot (${ua.url}, ${ua.version}) Node.js/${process.version}`;
   }
