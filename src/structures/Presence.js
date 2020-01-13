@@ -55,8 +55,8 @@ class Presence {
       presence &&
       this.status === presence.status &&
       (this.game ? this.game.equals(presence.game) : !presence.game) &&
-      ((this.clientStatus === null && presence.clientStatus === null) ||
-      (this.clientStatus !== null && presence.clientStatus !== null &&
+      ((!this.clientStatus && !presence.clientStatus) ||
+      (this.clientStatus && presence.clientStatus &&
       this.clientStatus.web === presence.clientStatus.web &&
       this.clientStatus.mobile === presence.clientStatus.mobile &&
       this.clientStatus.desktop === presence.clientStatus.desktop))
