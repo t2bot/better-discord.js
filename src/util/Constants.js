@@ -286,6 +286,13 @@ exports.ChannelTypes = {
   STORE: 6,
 };
 
+exports.RelationshipTypes = {
+  FRIEND: 1,
+  BLOCKED: 2,
+  INCOMING_FRIEND: 3,
+  OUTGOING_FRIEND: 4,
+};
+
 exports.OPCodes = {
   DISPATCH: 0,
   HEARTBEAT: 1,
@@ -345,6 +352,8 @@ exports.Events = {
   MESSAGE_REACTION_ADD: 'messageReactionAdd',
   MESSAGE_REACTION_REMOVE: 'messageReactionRemove',
   MESSAGE_REACTION_REMOVE_ALL: 'messageReactionRemoveAll',
+  RELATIONSHIP_ADD: 'relationshipAdd',
+  RELATIONSHIP_REMOVE: 'relationshipRemove',
   USER_UPDATE: 'userUpdate',
   USER_NOTE_UPDATE: 'userNoteUpdate',
   USER_SETTINGS_UPDATE: 'clientUserSettingsUpdate',

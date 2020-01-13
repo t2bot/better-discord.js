@@ -30,10 +30,16 @@ class ClientUser extends User {
     this._typing = new Map();
 
     /**
+     * A Collection of all relationships for the logged in user
+     * <warn>This is only filled when using a user account.</warn>
+     * @type {Collection<Snowflake, Relationship}
+     */
+    this.relationships = new Collection();
+
+    /**
      * A Collection of friends for the logged in user
      * <warn>This is only filled when using a user account.</warn>
      * @type {Collection<Snowflake, User>}
-     * @deprecated
      */
     this.friends = new Collection();
 
@@ -41,7 +47,6 @@ class ClientUser extends User {
      * A Collection of blocked users for the logged in user
      * <warn>This is only filled when using a user account.</warn>
      * @type {Collection<Snowflake, User>}
-     * @deprecated
      */
     this.blocked = new Collection();
 

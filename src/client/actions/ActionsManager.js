@@ -30,6 +30,8 @@ class ActionsManager {
     this.register(require('./GuildEmojisUpdate'));
     this.register(require('./GuildRolesPositionUpdate'));
     this.register(require('./GuildChannelsPositionUpdate'));
+    this.register(require('./RelationshipAdd'));
+    this.register(require('./RelationshipRemove'));
   }
 
   register(Action) {

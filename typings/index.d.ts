@@ -142,6 +142,8 @@ declare module 'better-discord.js' {
 		public on(event: 'rateLimit', listener: (rateLimit: RateLimitInfo) => void): this;
 		public on(event: 'ready', listener: () => void): this;
 		public on(event: 'reconnecting', listener: () => void): this;
+		public on(event: 'relationshipAdd', listener: (relationship: Relationship) => void): this;
+		public on(event: 'relationshipRemove', listener: (relationship: Relationship) => void): this;
 		public on(event: 'resume', listener: (replayed: number) => void): this;
 		public on(event: 'roleCreate', listener: (role: Role) => void): this;
 		public on(event: 'roleDelete', listener: (role: Role) => void): this;
@@ -191,6 +193,8 @@ declare module 'better-discord.js' {
 		public once(event: 'rateLimit', listener: (rateLimit: RateLimitInfo) => void): this;
 		public once(event: 'ready', listener: () => void): this;
 		public once(event: 'reconnecting', listener: () => void): this;
+		public once(event: 'relationshipAdd', listener: (relationship: Relationship) => void): this;
+		public once(event: 'relationshipRemove', listener: (relationship: Relationship) => void): this;
 		public once(event: 'resume', listener: (replayed: number) => void): this;
 		public once(event: 'roleCreate', listener: (role: Role) => void): this;
 		public once(event: 'roleDelete', listener: (role: Role) => void): this;
@@ -243,6 +247,7 @@ declare module 'better-discord.js' {
 		public notes: Collection<Snowflake, string>;
 		public outgoingFriendRequests: Collection<Snowflake, User>;
 		public premium: boolean;
+		public relationships: Collection<Snowflake, Relationship>;
 		public settings: ClientUserSettings;
 		public verified: boolean;
 		public acceptInvite(invite: Invite | string): Promise<Guild>;
@@ -1005,6 +1010,12 @@ declare module 'better-discord.js' {
 		public name: string;
 		public reaction: MessageReaction;
 		public toString(): string;
+	}
+
+	export class Relationship {
+		constructor(data: object);
+		public user: User;
+		public type: 'friend' | 'blocked' | 'incomingFriend' | 'outgoingFriend';
 	}
 
 	class RequestHandler {

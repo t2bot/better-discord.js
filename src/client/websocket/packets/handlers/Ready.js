@@ -1,6 +1,8 @@
 const AbstractHandler = require('./AbstractHandler');
-
+const Constants = require('../../../../util/Constants');
+const RelationshipTypes = Constants.RelationshipTypes;
 const ClientUser = require('../../../../structures/ClientUser');
+const Relationship = require('../../../../structures/Relationship');
 
 class ReadyHandler extends AbstractHandler {
   handle(packet) {
@@ -27,14 +29,23 @@ class ReadyHandler extends AbstractHandler {
 
     for (const relation of data.relationships) {
       const user = client.dataManager.newUser(relation.user);
-      if (relation.type === 1) { // friend
-        client.user.friends.set(user.id, user);
-      } else if (relation.type === 2) { // blocked
-        client.user.blocked.set(user.id, user);
-      } else if (relation.type === 3) { // incoming friend request
-        client.user.incomingFriendRequests.set(user.id, user);
-      } else if (relation.type === 4) { // outgoing friend request
-        client.user.outgoingFriendRequests.set(user.id, user);
+      client.user.relationships.set(user.id, new Relationship({
+        user: user,
+        type: relation.type,
+      }));
+      switch (relation.type) {
+        case RelationshipTypes.FRIEND:
+          client.user.friends.set(user.id, user);
+          break;
+        case RelationshipTypes.BLOCKED:
+          client.user.blocked.set(user.id, user);
+          break;
+        case RelationshipTypes.INCOMING_FRIEND:
+          client.user.incomingFriendRequests.set(user.id, user);
+          break;
+        case RelationshipTypes.OUTGOING_FRIEND:
+          client.user.outgoingFriendRequests.set(user.id, user);
+          break;
       }
     }
 
