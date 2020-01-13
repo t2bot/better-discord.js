@@ -984,8 +984,13 @@ class RESTMethods {
     if (code.id) code = code.id;
     return new Promise((resolve, reject) =>
       this.rest.makeRequest('post', Endpoints.Invite(code), true).then(res => {
+        // maybe we are super fast in the guild and thus are already in it
+        if (this.client.guilds.get(res.guild.id)) {
+          resolve(this.client.guilds.get(res.guild.id));
+          return;
+        }
         const handler = guild => {
-          if (guild.id === res.id) {
+          if (guild.id === res.guild.id) {
             resolve(guild);
             this.client.removeListener(Constants.Events.GUILD_CREATE, handler);
           }
@@ -995,7 +1000,7 @@ class RESTMethods {
           this.client.removeListener(Constants.Events.GUILD_CREATE, handler);
           reject(new Error('Accepting invite timed out'));
         }, 120e3);
-      })
+      }).catch(err => reject(err))
     );
   }
 
