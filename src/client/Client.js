@@ -316,7 +316,10 @@ class Client extends EventEmitter {
    */
   fetchUser(id, cache = true) {
     if (this.users.has(id)) return Promise.resolve(this.users.get(id));
-    return this.rest.methods.getUser(id, cache);
+    return this.rest.methods.getUser(id, cache).then(user => {
+      if (cache) this.users.set(user.id, user);
+      return user;
+    });
   }
 
   /**

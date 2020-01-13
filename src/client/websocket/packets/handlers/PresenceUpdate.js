@@ -49,6 +49,9 @@ class PresenceUpdateHandler extends AbstractHandler {
       } else {
         guild._setPresence(user.id, data);
       }
+    } else if (!user.presence.equals(data)) {
+      user.presence.update(data);
+      client.emit(Constants.Events.PRESENCE_UPDATE, oldUser, user);
     }
   }
 }

@@ -138,7 +138,7 @@ declare module 'better-discord.js' {
 		public on(event: 'messageReactionRemove', listener: (messageReaction: MessageReaction, user: User) => void): this;
 		public on(event: 'messageReactionRemoveAll', listener: (message: Message) => void): this;
 		public on(event: 'messageUpdate', listener: (oldMessage: Message, newMessage: Message) => void): this;
-		public on(event: 'presenceUpdate', listener: (oldMember: GuildMember, newMember: GuildMember) => void): this;
+		public on(event: 'presenceUpdate', listener: (oldMember: GuildMember | User, newMember: GuildMember | User) => void): this;
 		public on(event: 'rateLimit', listener: (rateLimit: RateLimitInfo) => void): this;
 		public on(event: 'ready', listener: () => void): this;
 		public on(event: 'reconnecting', listener: () => void): this;
@@ -189,7 +189,7 @@ declare module 'better-discord.js' {
 		public once(event: 'messageReactionRemove', listener: (messageReaction: MessageReaction, user: User) => void): this;
 		public once(event: 'messageReactionRemoveAll', listener: (message: Message) => void): this;
 		public once(event: 'messageUpdate', listener: (oldMessage: Message, newMessage: Message) => void): this;
-		public once(event: 'presenceUpdate', listener: (oldMember: GuildMember, newMember: GuildMember) => void): this;
+		public once(event: 'presenceUpdate', listener: (oldMember: GuildMember | User, newMember: GuildMember | User) => void): this;
 		public once(event: 'rateLimit', listener: (rateLimit: RateLimitInfo) => void): this;
 		public once(event: 'ready', listener: () => void): this;
 		public once(event: 'reconnecting', listener: () => void): this;
