@@ -354,20 +354,10 @@ class ClientUser extends User {
    * <warn>This is only available when using a user account.</warn>
    * @param {UserResolvable} user The user to send the friend request to
    * @returns {Promise<User>} The user the friend request was sent to
-   * @deprecated
    */
   addFriend(userStr) {
-    console.log("---------------");
     const userSend = this.client.resolver.resolveUser(userStr);
-    console.log(userSend);
     return this.client.rest.methods.addFriend(userSend ? userSend : userStr).then((user) => {
-      console.log(user);
-      /*if (this.incomingFriendRequests.has(user.id)) {
-        this.incomingFriendRequests.delete(user.id);
-        this.friends.set(user.id, user);
-      } else {
-        this.outgoingFriendRequests.set(user.id, user);
-      }*/
       return user;
     });
   }
@@ -377,7 +367,6 @@ class ClientUser extends User {
    * <warn>This is only available when using a user account.</warn>
    * @param {UserResolvable} user The user to remove from your friends
    * @returns {Promise<User>} The user that was removed
-   * @deprecated
    */
   removeFriend(user) {
     user = this.client.resolver.resolveUser(user);

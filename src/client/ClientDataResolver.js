@@ -43,7 +43,13 @@ class ClientDataResolver {
    */
   resolveUser(user) {
     if (user instanceof User) return user;
-    if (typeof user === 'string') return this.client.users.get(user) || null;
+    if (typeof user === 'string') {
+      if (user.includes("#")) {
+        return this.client.users.find(u => `${u.username}#${u.discriminator}` === user) || null;
+      } else {
+        return this.client.users.get(user) || null;
+      }
+    }
     if (user instanceof GuildMember) return user.user;
     if (user instanceof Message) return user.author;
     if (user instanceof Guild) return user.owner;
