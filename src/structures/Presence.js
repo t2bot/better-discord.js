@@ -1,4 +1,5 @@
 const { ActivityFlags, Endpoints } = require('../util/Constants');
+const Emoji = require('./Emoji');
 
 /**
  * The status of this presence:
@@ -83,6 +84,7 @@ class Game {
      * - 1: Streaming
      * - 2: Listening
      * - 3: Watching
+     * - 4: Custom
      * @type {number}
      */
     this.type = data.type;
@@ -104,6 +106,14 @@ class Game {
      * @type {?string}
      */
     this.state = data.state || null;
+
+    /**
+     * Emoji for a custom presence
+     * @type {?Emoji}
+     */
+    this.emoji = data.emoji ? new Emoji({
+      client: presence.client,
+    }, data.emoji) : null;
 
     /**
      * Application ID associated with this activity
@@ -175,7 +185,8 @@ class Game {
       game &&
       this.name === game.name &&
       this.type === game.type &&
-      this.url === game.url
+      this.url === game.url &&
+      this.state === game.state
     );
   }
 }

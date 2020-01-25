@@ -438,6 +438,7 @@ declare module 'better-discord.js' {
 		public applicationID: string;
 		public assets: RichPresenceAssets;
 		public details: string;
+		public emoji: Emoji | null;
 		public name: string;
 		public readonly streaming: boolean;
 		public party: {
