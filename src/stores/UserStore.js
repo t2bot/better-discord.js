@@ -18,9 +18,10 @@ class UserStore extends DataStore {
    * Data that resolves to give a User object. This can be:
    * * A User object
    * * A Snowflake
+   * * A string in the form of Username#Discriminator
    * * A Message object (resolves to the message author)
    * * A GuildMember object
-   * @typedef {User|Snowflake|Message|GuildMember} UserResolvable
+   * @typedef {User|Snowflake|string|Message|GuildMember} UserResolvable
    */
 
   /**
@@ -31,6 +32,9 @@ class UserStore extends DataStore {
   resolve(user) {
     if (user instanceof GuildMember) return user.user;
     if (user instanceof Message) return user.author;
+    if (typeof user === 'string' && user.includes('#')) {
+      return this.find(u => `${u.username}#${u.discriminator}` === user) || null;
+    }
     return super.resolve(user);
   }
 
@@ -42,6 +46,9 @@ class UserStore extends DataStore {
   resolveID(user) {
     if (user instanceof GuildMember) return user.user.id;
     if (user instanceof Message) return user.author.id;
+    if (typeof user === 'string' && user.includes('#')) {
+      return this.find(u => `${u.username}#${u.discriminator}` === user).id || null;
+    }
     return super.resolveID(user);
   }
 
@@ -56,6 +63,16 @@ class UserStore extends DataStore {
     if (existing && !existing.partial) return existing;
     const data = await this.client.api.users(id).get();
     return this.add(data, cache);
+  }
+
+  add(data, channel, cache = true) {
+    if (typeof channel === 'boolean') {
+      cache = channel;
+      channel = undefined;
+    }
+    const user = super.add(data, cache);
+    if (channel) channel.recipients.add(user);
+    return user;
   }
 }
 

@@ -69,8 +69,8 @@ exports.DefaultOptions = {
     compress: false,
     properties: {
       $os: browser ? 'browser' : process.platform,
-      $browser: 'discord.js',
-      $device: 'discord.js',
+      $browser: 'better-discord.js',
+      $device: 'better-discord.js',
     },
     version: 6,
   },
@@ -143,6 +143,8 @@ exports.Endpoints = {
       },
       AppIcon: (clientID, hash, { format = 'webp', size } = {}) =>
         makeImageUrl(`${root}/app-icons/${clientID}/${hash}`, { size, format }),
+      ChannelIcon: (channelID, hash, { format = 'webp', size } = {}) =>
+        makeImageUrl(`${root}/channel-icons/${channelID}/${hash}`, { size, format }),
       AppAsset: (clientID, hash, { format = 'webp', size } = {}) =>
         makeImageUrl(`${root}/app-assets/${clientID}/${hash}`, { size, format }),
       GDMIcon: (channelID, hash, format = 'webp', size) =>
@@ -282,6 +284,9 @@ exports.Events = {
   SHARD_RESUME: 'shardResume',
   INVALIDATED: 'invalidated',
   RAW: 'raw',
+  RELATIONSHIP_ADD: 'relationshipAdd',
+  RELATIONSHIP_UPDATE: 'relationshipUpdate',
+  RELATIONSHIP_REMOVE: 'relationshipRemove',
 };
 
 exports.ShardEvents = {
@@ -348,6 +353,8 @@ exports.PartialTypes = keyMirror([
  * * VOICE_STATE_UPDATE
  * * VOICE_SERVER_UPDATE
  * * WEBHOOKS_UPDATE
+ * * RELATIONSHIP_ADD
+ * * RELATIONSHIP_REMOVE
  * @typedef {string} WSEventType
  */
 exports.WSEvents = keyMirror([
@@ -387,6 +394,8 @@ exports.WSEvents = keyMirror([
   'VOICE_STATE_UPDATE',
   'VOICE_SERVER_UPDATE',
   'WEBHOOKS_UPDATE',
+  'RELATIONSHIP_ADD',
+  'RELATIONSHIP_REMOVE',
 ]);
 
 /**

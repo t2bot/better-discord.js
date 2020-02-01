@@ -1,5 +1,5 @@
 {
-  "name": "discord.js",
+  "name": "better-discord.js",
   "version": "12.0.0-dev",
   "description": "A powerful library for interacting with the Discord API",
   "main": "./src/index",
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/discordjs/discord.js.git"
+    "url": "git+https://github.com/Sorunome/better-discord.js.git"
   },
   "keywords": [
     "discord",
@@ -26,12 +26,12 @@
     "node",
     "discordapp"
   ],
-  "author": "Amish Shah <amishshah.2k@gmail.com>",
+  "author": "Sorunome, Amish Shah <amishshah.2k@gmail.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/discordjs/discord.js/issues"
+    "url": "https://github.com/Sorunome/better-discord.js/issues"
   },
-  "homepage": "https://github.com/discordjs/discord.js#readme",
+  "homepage": "https://github.com/Sorunome/better-discord.js#readme",
   "runkitExampleFilename": "./docs/examples/ping.js",
   "unpkg": "./webpack/discord.min.js",
   "dependencies": {
@@ -42,6 +42,7 @@
     "prism-media": "^1.0.0",
     "setimmediate": "^1.0.5",
     "tweetnacl": "^1.0.1",
+    "useragent-generator": "^1.1.1-amkt-22079-finish.0",
     "ws": "^7.2.0"
   },
   "peerDependencies": {

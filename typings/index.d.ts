@@ -154,8 +154,10 @@ declare module 'discord.js' {
 		public channels: ChannelStore;
 		public readonly emojis: GuildEmojiStore;
 		public guilds: GuildStore;
+		public presences: PresenceStore;
 		public readyAt: Date | null;
 		public readonly readyTimestamp: number | null;
+		public relationships: RelationshipStore;
 		public shard: ShardClientUtil | null;
 		public token: string | null;
 		public readonly uptime: number | null;
@@ -169,7 +171,7 @@ declare module 'discord.js' {
 		public fetchVoiceRegions(): Promise<Collection<string, VoiceRegion>>;
 		public fetchWebhook(id: Snowflake, token?: string): Promise<Webhook>;
 		public generateInvite(permissions?: PermissionResolvable): Promise<string>;
-		public login(token?: string): Promise<string>;
+		public login(token?: string, connectAsBot?: boolean): Promise<string>;
 		public sweepMessages(lifetime?: number): number;
 		public toJSON(): object;
 
@@ -198,6 +200,9 @@ declare module 'discord.js' {
 		public on(event: 'presenceUpdate', listener: (oldPresence: Presence | undefined, newPresence: Presence) => void): this;
 		public on(event: 'rateLimit', listener: (rateLimitData: RateLimitData) => void): this;
 		public on(event: 'ready', listener: () => void): this;
+		public on(event: 'relationshipAdd', listener: (relationship: Relationship)): this;
+		public on(event: 'relationshipRemove', listener: (relationship: Relationship)): this;
+		public on(event: 'relationshipUpdate', listener: (oldRelationship: Relationship, newRelationship: Relationship)): this;
 		public on(event: 'roleCreate' | 'roleDelete', listener: (role: Role) => void): this;
 		public on(event: 'roleUpdate', listener: (oldRole: Role, newRole: Role) => void): this;
 		public on(event: 'typingStart' | 'typingStop', listener: (channel: Channel | PartialChannel, user: User | PartialUser) => void): this;
@@ -235,6 +240,9 @@ declare module 'discord.js' {
 		public once(event: 'presenceUpdate', listener: (oldPresence: Presence | undefined, newPresence: Presence) => void): this;
 		public once(event: 'rateLimit', listener: (rateLimitData: RateLimitData) => void): this;
 		public once(event: 'ready', listener: () => void): this;
+		public once(event: 'relationshipAdd', listener: (relationship: Relationship)): this;
+		public once(event: 'relationshipRemove', listener: (relationship: Relationship)): this;
+		public once(event: 'relationshipUpdate', listener: (oldRelationship: Relationship, newRelationship: Relationship)): this;
 		public once(event: 'roleCreate' | 'roleDelete', listener: (role: Role) => void): this;
 		public once(event: 'roleUpdate', listener: (oldRole: Role, newRole: Role) => void): this;
 		public once(event: 'typingStart' | 'typingStop', listener: (channel: Channel | PartialChannel, user: User | PartialUser) => void): this;
@@ -668,6 +676,17 @@ declare module 'discord.js' {
 		public toString(): string;
 	}
 
+	export class GroupDMChannel extends TextBasedChannel(Channel) {
+		constructor(client: Client, data?: object);
+		public icon: string | null;
+		public messages: MessageStore;
+		public name: string | null;
+		public readonly owner: User;
+		public readonly partial: boolean;
+		public recipients: RecipientStore;
+		public iconURL(options?: ImageURLOptions & { dynamic?: boolean }): string | null;
+	}
+
 	export class Guild extends Base {
 		constructor(client: Client, data: object);
 		private _sortedRoles(): Collection<Snowflake, Role>;
@@ -958,7 +977,7 @@ declare module 'discord.js' {
 		public application: ClientApplication | null;
 		public attachments: Collection<Snowflake, MessageAttachment>;
 		public author: User;
-		public channel: TextChannel | DMChannel;
+		public channel: TextChannel | DMChannel | GroupDMChannel;
 		public readonly cleanContent: string;
 		public content: string;
 		public readonly createdAt: Date;
@@ -1025,7 +1044,7 @@ declare module 'discord.js' {
 	}
 
 	export class MessageCollector extends Collector<Snowflake, Message> {
-		constructor(channel: TextChannel | DMChannel, filter: CollectorFilter, options?: MessageCollectorOptions);
+		constructor(channel: TextChannel | DMChannel | GroupDMChannel, filter: CollectorFilter, options?: MessageCollectorOptions);
 		private _handleChannelDeletion(channel: GuildChannel): void;
 		private _handleGuildDeletion(guild: Guild): void;
 
@@ -1193,6 +1212,15 @@ declare module 'discord.js' {
 		constructor(reaction: MessageReaction, emoji: object);
 		public reaction: MessageReaction;
 		public toJSON(): object;
+	}
+
+	export class RecipientStore extends Datastore { }
+
+	export class RelationshipStore extends DataStore {
+		public readonly blocked: UserStore;
+		public readonly friends: UserStore;
+		public readonly incoming: UserStore;
+		public readonly outgoing: UserStore;
 	}
 
 	export class RichPresenceAssets {
@@ -1846,7 +1874,7 @@ declare module 'discord.js' {
 	}
 
 	export class MessageStore extends DataStore<Snowflake, Message, typeof Message, MessageResolvable> {
-		constructor(channel: TextChannel | DMChannel, iterable?: Iterable<any>);
+		constructor(channel: TextChannel | DMChannel | GroupDMChannel, iterable?: Iterable<any>);
 		public fetch(message: Snowflake, cache?: boolean): Promise<Message>;
 		public fetch(options?: ChannelLogsQueryOptions, cache?: boolean): Promise<Collection<Snowflake, Message>>;
 		public fetchPinned(cache?: boolean): Promise<Collection<Snowflake, Message>>;
@@ -2178,6 +2206,7 @@ declare module 'discord.js' {
 		DMChannel: typeof DMChannel;
 		TextChannel: typeof TextChannel;
 		VoiceChannel: typeof VoiceChannel;
+		GroupDMChannel: typeof GroupDMChannel;
 		CategoryChannel: typeof CategoryChannel;
 		NewsChannel: typeof NewsChannel;
 		StoreChannel: typeof StoreChannel;
@@ -2189,6 +2218,7 @@ declare module 'discord.js' {
 		VoiceState: typeof VoiceState;
 		Role: typeof Role;
 		User: typeof User;
+		Relationship: typeof Relationship;
 	}
 
 	interface FetchMemberOptions {
@@ -2454,7 +2484,7 @@ declare module 'discord.js' {
 
 	type MessageResolvable = Message | Snowflake;
 
-	type MessageTarget = TextChannel | DMChannel | User | GuildMember | Webhook | WebhookClient;
+	type MessageTarget = TextChannel | DMChannel | GroupDMChannel | User | GuildMember | Webhook | WebhookClient;
 
 	type MessageType = 'DEFAULT'
 		| 'RECIPIENT_ADD'

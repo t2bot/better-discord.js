@@ -15,6 +15,8 @@ const UserStore = require('../stores/UserStore');
 const ChannelStore = require('../stores/ChannelStore');
 const GuildStore = require('../stores/GuildStore');
 const GuildEmojiStore = require('../stores/GuildEmojiStore');
+const RelationshipStore = require('../stores/RelationshipStore');
+const PresenceStore = require('../stores/PresenceStore');
 const { Events, browser, DefaultOptions } = require('../util/Constants');
 const DataResolver = require('../util/DataResolver');
 const Structures = require('../util/Structures');
@@ -119,6 +121,18 @@ class Client extends BaseClient {
      */
     this.channels = new ChannelStore(this);
 
+    /**
+     * All of the {@link Relationship}s that the client is currently handling, mapped by their IDs
+     * @type {RelationshipStore<Snowflake, Relationship>}
+     */
+    this.relationships = new RelationshipStore(this);
+
+    /**
+     * All of the {@link Presence}s that the client can currently see, mapped by their IDs
+     * @type {PresenceStore<Snowflake, Presence>}
+     */
+    this.presences = new PresenceStore(this);
+
     const ClientPresence = Structures.get('ClientPresence');
     /**
      * The presence of the Client
@@ -191,11 +205,12 @@ class Client extends BaseClient {
   /**
    * Logs the client in, establishing a websocket connection to Discord.
    * @param {string} token Token of the account to log in with
+   * @param {boolean} connectAsBot Connect as a bot or not. Defaults to true
    * @returns {Promise<string>} Token of the account used
    * @example
    * client.login('my token');
    */
-  async login(token = this.token) {
+  async login(token = this.token, connectAsBot = true) {
     if (!token || typeof token !== 'string') throw new Error('TOKEN_INVALID');
     this.token = token = token.replace(/^(Bot|Bearer)\s*/i, '');
     this.emit(Events.DEBUG,
@@ -209,7 +224,7 @@ class Client extends BaseClient {
     this.emit(Events.DEBUG, 'Preparing to connect to the gateway...');
 
     try {
-      await this.ws.connect();
+      await this.ws.connect(connectAsBot);
       return this.token;
     } catch (error) {
       this.destroy();
@@ -240,6 +255,39 @@ class Client extends BaseClient {
     const code = DataResolver.resolveInviteCode(invite);
     return this.api.invites(code).get({ query: { with_counts: true } })
       .then(data => new Invite(this, data));
+  }
+
+  /**
+   * Accepts an invite from Discord.
+   * @param {InviteResolvable} inviteResolvable Invite code or URL
+   * @returns {Promise<?Guild>}
+   */
+  async acceptInvite(inviteResolvable) {
+    const invite = await this.fetchInvite(inviteResolvable);
+    if (!invite) {
+      return null;
+    }
+    const res = await this.api.invite[invite.code].post({ data: {} });
+    if (!res) {
+      return null;
+    }
+    const foundGuild = this.guilds.get(res.guild.id);
+    if (foundGuild) {
+      return foundGuild;
+    }
+    return new Promise((resolve, reject) => {
+      const handler = guild => {
+        if (guild.id === res.guild.id) {
+          resolve(guild);
+          this.removeListener(Events.GUILD_CREATE, handler);
+        }
+      };
+      this.on(Events.GUILD_CREATE, handler);
+      this.setTimeout(() => {
+        this.removeListener(Events.GUILD_CREATE, handler);
+        reject(new Error('Accpeting invite timed out'));
+      }, 120e3);
+    });
   }
 
   /**

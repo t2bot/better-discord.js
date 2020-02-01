@@ -25,8 +25,9 @@ class RESTManager {
     return routeBuilder(this);
   }
 
-  getAuth() {
+  getAuth(isBot = true) {
     const token = this.client.token || this.client.accessToken;
+    if (!isBot) return token;
     if (token) return `${this.tokenPrefix} ${token}`;
     throw new Error('TOKEN_MISSING');
   }

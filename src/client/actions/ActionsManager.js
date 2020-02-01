@@ -35,6 +35,8 @@ class ActionsManager {
     this.register(require('./GuildChannelsPositionUpdate'));
     this.register(require('./GuildIntegrationsUpdate'));
     this.register(require('./WebhooksUpdate'));
+    this.register(require('./RelationshipAdd'));
+    this.register(require('./RelationshipRemove'));
   }
 
   register(Action) {

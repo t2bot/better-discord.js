@@ -17,5 +17,17 @@ module.exports = (client, { d: data }, shard) => {
     client.guilds.add(guild);
   }
 
+  for (const privateChannel of data.private_channels) {
+    client.channels.add(privateChannel);
+  }
+
+  for (const relationship of data.relationships) {
+    client.relationships.add(relationship);
+  }
+
+  for (const presence of data.presences) {
+    client.presences.add(presence);
+  }
+
   shard.checkReady();
 };

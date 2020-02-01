@@ -31,9 +31,18 @@ class APIRequest {
     const url = API + this.path;
     let headers = {};
 
-    if (this.options.auth !== false) headers.Authorization = this.rest.getAuth();
+    const isBot = (this.client.user && this.client.user.bot) || !this.client.user;
+
+    if (this.options.auth !== false) headers.Authorization = this.rest.getAuth(isBot);
     if (this.options.reason) headers['X-Audit-Log-Reason'] = encodeURIComponent(this.options.reason);
-    if (!browser) headers['User-Agent'] = UserAgent;
+    if (!browser) {
+      if (!isBot) {
+        const ua = require('useragent-generator');
+        headers['User-Agent'] = ua.chrome('79.0.3945.117');
+      } else {
+        headers['User-Agent'] = UserAgent;
+      }
+    }
     if (this.options.headers) headers = Object.assign(headers, this.options.headers);
 
     let body;

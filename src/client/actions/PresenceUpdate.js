@@ -14,7 +14,17 @@ class PresenceUpdateAction extends Action {
     }
 
     const guild = this.client.guilds.get(data.guild_id);
-    if (!guild) return;
+    if (!guild) {
+      let newPresence = this.client.presences.get(user.id);
+      let oldPresence = null;
+      if (newPresence) {
+        oldPresence = newPresence._update(data);
+      } else {
+        newPresence = this.client.presences.add(data);
+      }
+      this.client.emit(Events.PRESENCE_UPDATE, oldPresence, newPresence);
+      return;
+    }
 
     let oldPresence = guild.presences.get(user.id);
     if (oldPresence) oldPresence = oldPresence._clone();
@@ -28,7 +38,7 @@ class PresenceUpdateAction extends Action {
       });
       this.client.emit(Events.GUILD_MEMBER_AVAILABLE, member);
     }
-    guild.presences.add(Object.assign(data, { guild }));
+    this.client.presences.add(Object.assign(data, { guild }), guild);
     if (member && this.client.listenerCount(Events.PRESENCE_UPDATE)) {
       /**
        * Emitted whenever a guild member's presence (e.g. status, activity) is changed.

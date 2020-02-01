@@ -347,7 +347,7 @@ class Guild extends Base {
 
     if (data.presences) {
       for (const presence of data.presences) {
-        this.presences.add(Object.assign(presence, { guild: this }));
+        this.client.presences.add(Object.assign(presence, { guild: this }), this);
       }
     }
 

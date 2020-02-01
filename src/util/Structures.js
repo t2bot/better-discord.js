@@ -74,6 +74,7 @@ const structures = {
   DMChannel: require('../structures/DMChannel'),
   TextChannel: require('../structures/TextChannel'),
   VoiceChannel: require('../structures/VoiceChannel'),
+  GroupDMChannel: require('../structures/GroupDMChannel'),
   CategoryChannel: require('../structures/CategoryChannel'),
   NewsChannel: require('../structures/NewsChannel'),
   StoreChannel: require('../structures/StoreChannel'),
@@ -86,6 +87,7 @@ const structures = {
   VoiceState: require('../structures/VoiceState'),
   Role: require('../structures/Role'),
   User: require('../structures/User'),
+  Relationship: require('../structures/Relationship'),
 };
 
 module.exports = Structures;

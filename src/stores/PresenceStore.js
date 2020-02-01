@@ -12,9 +12,15 @@ class PresenceStore extends DataStore {
     super(client, iterable, Presence);
   }
 
-  add(data, cache) {
+  add(data, guild, cache) {
+    if (typeof guild === 'boolean') {
+      cache = guild;
+      guild = undefined;
+    }
     const existing = this.get(data.user.id);
-    return existing ? existing.patch(data) : super.add(data, cache, { id: data.user.id });
+    const ret = existing ? existing.patch(data) : super.add(data, cache, { id: data.user.id });
+    if (guild) guild.presences.set(ret.id, ret);
+    return ret;
   }
 
   /**

@@ -18,6 +18,7 @@ class Channel extends Base {
      * * `dm` - a DM channel
      * * `text` - a guild text channel
      * * `voice` - a guild voice channel
+     * * `group` - a group dm channel
      * * `category` - a guild category channel
      * * `news` - a guild news channel
      * * `store` - a guild store channel
@@ -96,9 +97,19 @@ class Channel extends Base {
   static create(client, data, guild) {
     const Structures = require('../util/Structures');
     let channel;
-    if (data.type === ChannelTypes.DM || (data.type !== ChannelTypes.GROUP && !data.guild_id && !guild)) {
-      const DMChannel = Structures.get('DMChannel');
-      channel = new DMChannel(client, data);
+    if (data.type === ChannelTypes.DM || data.type === ChannelTypes.GROUP) {
+      switch (data.type) {
+        case ChannelTypes.DM: {
+          const DMChannel = Structures.get('DMChannel');
+          channel = new DMChannel(client, data);
+          break;
+        }
+        case ChannelTypes.GROUP: {
+          const GroupDMChannel = Structures.get('GroupDMChannel');
+          channel = new GroupDMChannel(client, data);
+          break;
+        }
+      }
     } else {
       guild = guild || client.guilds.get(data.guild_id);
       if (guild) {
