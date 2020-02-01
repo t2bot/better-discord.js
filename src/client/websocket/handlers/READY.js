@@ -22,7 +22,7 @@ module.exports = (client, { d: data }, shard) => {
   }
 
   for (const relationship of data.relationships) {
-    client.relationships.add(relationship);
+    client.user.relationships.add(relationship);
   }
 
   for (const presence of data.presences) {

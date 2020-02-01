@@ -15,7 +15,6 @@ const UserStore = require('../stores/UserStore');
 const ChannelStore = require('../stores/ChannelStore');
 const GuildStore = require('../stores/GuildStore');
 const GuildEmojiStore = require('../stores/GuildEmojiStore');
-const RelationshipStore = require('../stores/RelationshipStore');
 const PresenceStore = require('../stores/PresenceStore');
 const { Events, browser, DefaultOptions } = require('../util/Constants');
 const DataResolver = require('../util/DataResolver');
@@ -120,12 +119,6 @@ class Client extends BaseClient {
      * @type {ChannelStore<Snowflake, Channel>}
      */
     this.channels = new ChannelStore(this);
-
-    /**
-     * All of the {@link Relationship}s that the client is currently handling, mapped by their IDs
-     * @type {RelationshipStore<Snowflake, Relationship>}
-     */
-    this.relationships = new RelationshipStore(this);
 
     /**
      * All of the {@link Presence}s that the client can currently see, mapped by their IDs

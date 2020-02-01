@@ -9,7 +9,15 @@ declare enum ChannelType {
 	unknown
 }
 
-declare module 'discord.js' {
+declare enum RelationshipType {
+	friend,
+	block,
+	incoming,
+	outgoing,
+	unknown
+}
+
+declare module 'better-discord.js' {
 	import BaseCollection from '@discordjs/collection';
 	import { EventEmitter } from 'events';
 	import { Stream, Readable, Writable } from 'stream';
@@ -157,7 +165,6 @@ declare module 'discord.js' {
 		public presences: PresenceStore;
 		public readyAt: Date | null;
 		public readonly readyTimestamp: number | null;
-		public relationships: RelationshipStore;
 		public shard: ShardClientUtil | null;
 		public token: string | null;
 		public readonly uptime: number | null;
@@ -165,6 +172,7 @@ declare module 'discord.js' {
 		public users: UserStore;
 		public voice: ClientVoiceManager | null;
 		public ws: WebSocketManager;
+		public acceptInvite(invite: InviteResolvable): Promise<Guild | null>;
 		public destroy(): void;
 		public fetchApplication(): Promise<ClientApplication>;
 		public fetchInvite(invite: InviteResolvable): Promise<Invite>;
@@ -200,9 +208,9 @@ declare module 'discord.js' {
 		public on(event: 'presenceUpdate', listener: (oldPresence: Presence | undefined, newPresence: Presence) => void): this;
 		public on(event: 'rateLimit', listener: (rateLimitData: RateLimitData) => void): this;
 		public on(event: 'ready', listener: () => void): this;
-		public on(event: 'relationshipAdd', listener: (relationship: Relationship)): this;
-		public on(event: 'relationshipRemove', listener: (relationship: Relationship)): this;
-		public on(event: 'relationshipUpdate', listener: (oldRelationship: Relationship, newRelationship: Relationship)): this;
+		public on(event: 'relationshipAdd', listener: (relationship: Relationship) => void): this;
+		public on(event: 'relationshipRemove', listener: (relationship: Relationship) => void): this;
+		public on(event: 'relationshipUpdate', listener: (oldRelationship: Relationship, newRelationship: Relationship) => void): this;
 		public on(event: 'roleCreate' | 'roleDelete', listener: (role: Role) => void): this;
 		public on(event: 'roleUpdate', listener: (oldRole: Role, newRole: Role) => void): this;
 		public on(event: 'typingStart' | 'typingStop', listener: (channel: Channel | PartialChannel, user: User | PartialUser) => void): this;
@@ -240,9 +248,9 @@ declare module 'discord.js' {
 		public once(event: 'presenceUpdate', listener: (oldPresence: Presence | undefined, newPresence: Presence) => void): this;
 		public once(event: 'rateLimit', listener: (rateLimitData: RateLimitData) => void): this;
 		public once(event: 'ready', listener: () => void): this;
-		public once(event: 'relationshipAdd', listener: (relationship: Relationship)): this;
-		public once(event: 'relationshipRemove', listener: (relationship: Relationship)): this;
-		public once(event: 'relationshipUpdate', listener: (oldRelationship: Relationship, newRelationship: Relationship)): this;
+		public once(event: 'relationshipAdd', listener: (relationship: Relationship) => void): this;
+		public once(event: 'relationshipRemove', listener: (relationship: Relationship) => void): this;
+		public once(event: 'relationshipUpdate', listener: (oldRelationship: Relationship, newRelationship: Relationship) => void): this;
 		public once(event: 'roleCreate' | 'roleDelete', listener: (role: Role) => void): this;
 		public once(event: 'roleUpdate', listener: (oldRole: Role, newRole: Role) => void): this;
 		public once(event: 'typingStart' | 'typingStop', listener: (channel: Channel | PartialChannel, user: User | PartialUser) => void): this;
@@ -326,6 +334,7 @@ declare module 'discord.js' {
 
 	export class ClientUser extends User {
 		public mfaEnabled: boolean;
+		public relationships: RelationshipStore;
 		public verified: boolean;
 		public setActivity(options?: ActivityOptions): Promise<Presence>;
 		public setActivity(name: string, options?: ActivityOptions): Promise<Presence>;
@@ -1214,15 +1223,6 @@ declare module 'discord.js' {
 		public toJSON(): object;
 	}
 
-	export class RecipientStore extends Datastore { }
-
-	export class RelationshipStore extends DataStore {
-		public readonly blocked: UserStore;
-		public readonly friends: UserStore;
-		public readonly incoming: UserStore;
-		public readonly outgoing: UserStore;
-	}
-
 	export class RichPresenceAssets {
 		constructor(activity: Activity, assets: object);
 		public largeImage: Snowflake | null;
@@ -1443,6 +1443,11 @@ declare module 'discord.js' {
 		public createWebhook(name: string, options?: { avatar?: BufferResolvable | Base64Resolvable, reason?: string }): Promise<Webhook>;
 		public setNSFW(nsfw: boolean, reason?: string): Promise<NewsChannel>;
 		public fetchWebhooks(): Promise<Collection<Snowflake, Webhook>>;
+	}
+
+	export class Relationship extends Base {
+		public user: User;
+		public type: keyof typeof RelationshipType;
 	}
 
 	export class User extends PartialTextBasedChannel(Base) {
@@ -1894,6 +1899,17 @@ declare module 'discord.js' {
 		constructor(client: Client, iterable: Iterable<any> | undefined, reaction: MessageReaction);
 		public fetch(options?: { limit?: number, after?: Snowflake, before?: Snowflake }): Promise<Collection<Snowflake, User>>;
 		public remove(user?: UserResolvable): Promise<MessageReaction>;
+	}
+
+	export class RecipientStore extends DataStore<Snowflake, User, typeof User> { }
+
+	export class RelationshipStore extends DataStore<Snowflake, Relationship> {
+		public readonly blocked: UserStore;
+		public readonly friends: UserStore;
+		public readonly incoming: UserStore;
+		public readonly outgoing: UserStore;
+		public remove(user: UserResolvable): Promise<User | null>;
+		public request(type: keyof typeof RelationshipType, user: UserResolvable): Promise<User | null | string>;
 	}
 
 	export class RoleStore extends DataStore<Snowflake, Role, typeof Role, RoleResolvable> {
@@ -2683,7 +2699,7 @@ declare module 'discord.js' {
 
 	type TargetUser = number;
 
-	type UserResolvable = User | Snowflake | Message | GuildMember;
+	type UserResolvable = User | Snowflake | Message | GuildMember | string;
 
 	type VoiceStatus = number;
 

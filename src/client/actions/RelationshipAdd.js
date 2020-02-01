@@ -7,12 +7,12 @@ class RelationshipAddAction extends Action {
   handle(data) {
     const client = this.client;
 
-    let newRelationship = client.relationships.get(data.id);
+    let newRelationship = client.user.relationships.get(data.id);
     let oldRelationship = null;
     if (newRelationship) {
       oldRelationship = newRelationship._update(data);
     } else {
-      newRelationship = client.relationships.add(data);
+      newRelationship = client.user.relationships.add(data);
     }
     if (!oldRelationship) {
       /**

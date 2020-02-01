@@ -94,9 +94,10 @@ class RelationshipStore extends DataStore {
   async remove(userResolvable) {
     const user = this.users.resolve(userResolvable);
     if (!user) {
-      return;
+      return null;
     }
     await this.client.api.users['@me'].relationships[user.id].delete();
+    return user;
   }
 
   /**

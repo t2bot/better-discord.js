@@ -2,6 +2,7 @@
 
 const Structures = require('../util/Structures');
 const DataResolver = require('../util/DataResolver');
+const RelationshipStore = require('../stores/RelationshipStore');
 
 /**
  * Represents the logged in client's Discord user.
@@ -11,6 +12,12 @@ class ClientUser extends Structures.get('User') {
   constructor(client, data) {
     super(client, data);
     this._typing = new Map();
+
+    /**
+     * All of the {@link Relationship}s that the client is currently handling, mapped by their IDs
+     * @type {RelationshipStore<Snowflake, Relationship>}
+     */
+    this.relationships = new RelationshipStore(this);
   }
 
   _patch(data) {
