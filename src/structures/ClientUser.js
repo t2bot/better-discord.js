@@ -17,7 +17,7 @@ class ClientUser extends Structures.get('User') {
      * All of the {@link Relationship}s that the client is currently handling, mapped by their IDs
      * @type {RelationshipStore<Snowflake, Relationship>}
      */
-    this.relationships = new RelationshipStore(this);
+    this.relationships = new RelationshipStore(this.client);
   }
 
   _patch(data) {

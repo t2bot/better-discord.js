@@ -15,13 +15,11 @@ class PresenceUpdateAction extends Action {
 
     const guild = this.client.guilds.get(data.guild_id);
     if (!guild) {
-      let newPresence = this.client.presences.get(user.id);
-      let oldPresence = null;
-      if (newPresence) {
-        oldPresence = newPresence._update(data);
-      } else {
-        newPresence = this.client.presences.add(data);
+      let oldPresence = this.client.presences.get(user.id);
+      if (oldPresence) {
+        oldPresence = oldPresence._clone();
       }
+      const newPresence = this.client.presences.add(data);
       this.client.emit(Events.PRESENCE_UPDATE, oldPresence, newPresence);
       return;
     }

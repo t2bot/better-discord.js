@@ -143,8 +143,10 @@ exports.Endpoints = {
       },
       AppIcon: (clientID, hash, { format = 'webp', size } = {}) =>
         makeImageUrl(`${root}/app-icons/${clientID}/${hash}`, { size, format }),
-      ChannelIcon: (channelID, hash, { format = 'webp', size } = {}) =>
-        makeImageUrl(`${root}/channel-icons/${channelID}/${hash}`, { size, format }),
+      ChannelIcon: (channelID, hash, format = 'webp', size, dynamic = false) => {
+        if (dynamic) format = hash.startsWith('a_') ? 'gif' : format;
+        return makeImageUrl(`${root}/channel-icons/${channelID}/${hash}`, { size, format });
+      },
       AppAsset: (clientID, hash, { format = 'webp', size } = {}) =>
         makeImageUrl(`${root}/app-assets/${clientID}/${hash}`, { size, format }),
       GDMIcon: (channelID, hash, format = 'webp', size) =>

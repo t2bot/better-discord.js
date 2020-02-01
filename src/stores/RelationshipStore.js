@@ -92,7 +92,7 @@ class RelationshipStore extends DataStore {
    * @param {UserResolvable} userResolvable The users whos relationship to remove
    */
   async remove(userResolvable) {
-    const user = this.users.resolve(userResolvable);
+    const user = this.client.users.resolve(userResolvable);
     if (!user) {
       return null;
     }
