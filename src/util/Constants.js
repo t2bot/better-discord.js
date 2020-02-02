@@ -287,7 +287,6 @@ exports.Events = {
   INVALIDATED: 'invalidated',
   RAW: 'raw',
   RELATIONSHIP_ADD: 'relationshipAdd',
-  RELATIONSHIP_UPDATE: 'relationshipUpdate',
   RELATIONSHIP_REMOVE: 'relationshipRemove',
 };
 

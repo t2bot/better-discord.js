@@ -14,30 +14,17 @@ class RelationshipAddAction extends Action {
     } else {
       newRelationship = client.user.relationships.add(data);
     }
-    if (!oldRelationship) {
-      /**
-       * Emitted whenever there is a new relationship
-       * @event Client#relationshipAdd
-       * @param {Relationship} relationship The added relationship
-       */
-      client.emit(Events.RELATIONSHIP_ADD, newRelationship);
-      return {
-        old: null,
-        updated: newRelationship,
-      };
-    } else {
-      /**
-       * Emitted whenever a relationship is updated
-       * @event Client#relationshipUpdate
-       * @param {Relationship} oldRelationship The relationship before the update
-       * @param {Relationship} newRelationship The relationship after the update
-       */
-      client.emit(Events.RELATIONSHIP_UPDATE, oldRelationship, newRelationship);
-      return {
-        old: oldRelationship,
-        updated: newRelationship,
-      };
-    }
+    /**
+     * Emitted whenever a relationship is updated
+     * @event Client#relationshipAdd
+     * @param {Relationship?} oldRelationship The relationship before the update
+     * @param {Relationship} newRelationship The relationship after the update
+     */
+    client.emit(Events.RELATIONSHIP_ADD, oldRelationship, newRelationship);
+    return {
+      old: oldRelationship,
+      updated: newRelationship,
+    };
   }
 }
 

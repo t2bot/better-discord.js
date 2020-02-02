@@ -208,9 +208,8 @@ declare module 'better-discord.js' {
 		public on(event: 'presenceUpdate', listener: (oldPresence: Presence | undefined, newPresence: Presence) => void): this;
 		public on(event: 'rateLimit', listener: (rateLimitData: RateLimitData) => void): this;
 		public on(event: 'ready', listener: () => void): this;
-		public on(event: 'relationshipAdd', listener: (relationship: Relationship) => void): this;
+		public on(event: 'relationshipAdd', listener: (oldRelationship: Relationship | null, newRelationship: Relationship) => void): this;
 		public on(event: 'relationshipRemove', listener: (relationship: Relationship) => void): this;
-		public on(event: 'relationshipUpdate', listener: (oldRelationship: Relationship, newRelationship: Relationship) => void): this;
 		public on(event: 'roleCreate' | 'roleDelete', listener: (role: Role) => void): this;
 		public on(event: 'roleUpdate', listener: (oldRole: Role, newRole: Role) => void): this;
 		public on(event: 'typingStart' | 'typingStop', listener: (channel: Channel | PartialChannel, user: User | PartialUser) => void): this;
@@ -248,9 +247,8 @@ declare module 'better-discord.js' {
 		public once(event: 'presenceUpdate', listener: (oldPresence: Presence | undefined, newPresence: Presence) => void): this;
 		public once(event: 'rateLimit', listener: (rateLimitData: RateLimitData) => void): this;
 		public once(event: 'ready', listener: () => void): this;
-		public once(event: 'relationshipAdd', listener: (relationship: Relationship) => void): this;
+		public once(event: 'relationshipAdd', listener: (oldRelationship: Relationship | null, newRelationship: Relationship) => void): this;
 		public once(event: 'relationshipRemove', listener: (relationship: Relationship) => void): this;
-		public once(event: 'relationshipUpdate', listener: (oldRelationship: Relationship, newRelationship: Relationship) => void): this;
 		public once(event: 'roleCreate' | 'roleDelete', listener: (role: Role) => void): this;
 		public once(event: 'roleUpdate', listener: (oldRole: Role, newRole: Role) => void): this;
 		public once(event: 'typingStart' | 'typingStop', listener: (channel: Channel | PartialChannel, user: User | PartialUser) => void): this;
