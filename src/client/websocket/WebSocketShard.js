@@ -602,18 +602,20 @@ class WebSocketShard extends EventEmitter {
     } else {
       const ua = require('useragent-generator');
       const chromeVersion = '79.0.3945.117';
-      const wsOptions = Object.assign({}, client.options.ws, { properties: {
-        os: 'Windows',
-        browser: 'Chrome',
-        device: '',
-        browser_user_agent: ua.chrome(chromeVersion),
-        browser_version: chromeVersion,
-        os_version: '',
-        referrer: '',
-        referring_domain: '',
-        referrer_current: '',
-        referring_domain_current: '',
-      } });
+      const wsOptions = Object.assign({}, client.options.ws, {
+        properties: {
+          os: 'Windows',
+          browser: 'Chrome',
+          device: '',
+          browser_user_agent: ua.chrome(chromeVersion),
+          browser_version: chromeVersion,
+          os_version: '',
+          referrer: '',
+          referring_domain: '',
+          referrer_current: '',
+          referring_domain_current: '',
+        },
+      });
       d = {
         ...wsOptions,
         token: client.token,

@@ -24,7 +24,7 @@ class PresenceManager extends BaseManager {
       guild = undefined;
     }
     const existing = this.cache.get(data.user.id);
-    const ret =  existing ? existing.patch(data) : super.add(data, cache, { id: data.user.id });
+    const ret = existing ? existing.patch(data) : super.add(data, cache, { id: data.user.id });
     if (guild) guild.presences.cache.set(data.user.id, ret);
     return ret;
   }

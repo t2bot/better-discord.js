@@ -135,13 +135,11 @@ class WebSocketManager extends EventEmitter {
   async connect(connectAsBot = true) {
     const invalidToken = new DJSError(WSCodes[4004]);
     const promise = connectAsBot ? this.client.api.gateway.bot.get() : this.client.api.gateway.get({ auth: false });
-    const {
-      url: gatewayURL,
-      shards: recommendedShards,
-      session_start_limit: sessionStartLimit,
-    } = await promise.catch(error => {
-      throw error.httpStatus === 401 ? invalidToken : error;
-    });
+    const { url: gatewayURL, shards: recommendedShards, session_start_limit: sessionStartLimit } = await promise.catch(
+      error => {
+        throw error.httpStatus === 401 ? invalidToken : error;
+      },
+    );
 
     this.gateway = `${gatewayURL}/`;
 
