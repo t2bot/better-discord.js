@@ -18,8 +18,6 @@ declare enum RelationshipType {
 }
 
 declare module 'better-discord.js' {
-
-declare module 'discord.js' {
   import BaseCollection from '@discordjs/collection';
   import { EventEmitter } from 'events';
   import { Stream, Readable, Writable } from 'stream';
@@ -72,7 +70,7 @@ declare module 'discord.js' {
       target: MessageTarget,
       content?: StringResolvable,
       options?: MessageOptions | WebhookMessageOptions | MessageAdditions,
-      extra?: MessageOptions | WebhookMessageOptions
+      extra?: MessageOptions | WebhookMessageOptions,
     ): APIMessage;
     public static partitionMessageAdditions(
       items: (MessageEmbed | MessageAttachment)[],
@@ -180,7 +178,7 @@ declare module 'discord.js' {
     public channels: ChannelManager;
     public readonly emojis: GuildEmojiManager;
     public guilds: GuildManager;
-    public presences: PresenceStore;
+    public presences: PresenceManager;
     public readyAt: Date | null;
     public readonly readyTimestamp: number | null;
     public shard: ShardClientUtil | null;
@@ -198,7 +196,7 @@ declare module 'discord.js' {
     public fetchVoiceRegions(): Promise<Collection<string, VoiceRegion>>;
     public fetchWebhook(id: Snowflake, token?: string): Promise<Webhook>;
     public generateInvite(permissions?: PermissionResolvable): Promise<string>;
-    public login(token?: string): Promise<string>;
+    public login(token?: string, connectAsBot?: boolean): Promise<string>;
     public sweepMessages(lifetime?: number): number;
     public toJSON(): object;
 
@@ -229,6 +227,7 @@ declare module 'discord.js' {
 
   export class ClientUser extends User {
     public mfaEnabled: boolean;
+    public readonly relationships: RelationshipManager;
     public verified: boolean;
     public setActivity(options?: ActivityOptions): Promise<Presence>;
     public setActivity(name: string, options?: ActivityOptions): Promise<Presence>;
@@ -594,7 +593,7 @@ declare module 'discord.js' {
     public name: string | null;
     public readonly owner: User;
     public readonly partial: false;
-    public recipients: RecipientStore;
+    public recipients: Collection<Snowflake, User>;
     public iconURL(options?: ImageURLOptions & { dynamic?: boolean }): string | null;
   }
 
@@ -901,7 +900,7 @@ declare module 'discord.js' {
 
   export class Invite extends Base {
     constructor(client: Client, data: object);
-    public channel: GuildChannel | PartialGroupDMChannel;
+    public channel: GuildChannel | GroupDMChannel;
     public code: string;
     public readonly deletable: boolean;
     public readonly createdAt: Date | null;
@@ -1018,7 +1017,11 @@ declare module 'discord.js' {
   }
 
   export class MessageCollector extends Collector<Snowflake, Message> {
-    constructor(channel: TextChannel | DMChannel | GroupDMChannel, filter: CollectorFilter, options?: MessageCollectorOptions);
+    constructor(
+      channel: TextChannel | DMChannel | GroupDMChannel,
+      filter: CollectorFilter,
+      options?: MessageCollectorOptions,
+    );
     private _handleChannelDeletion(channel: GuildChannel): void;
     private _handleGuildDeletion(guild: Guild): void;
 
@@ -1142,11 +1145,9 @@ declare module 'discord.js' {
     public fetchWebhooks(): Promise<Collection<Snowflake, Webhook>>;
   }
 
-  export class PartialGroupDMChannel extends Channel {
-    constructor(client: Client, data: object);
-    public name: string;
-    public icon: string | null;
-    public iconURL(options?: ImageURLOptions): string | null;
+  export class Relationship extends Base {
+    public user: User;
+    public type: keyof typeof RelationshipType;
   }
 
   export class PermissionOverwrites {
@@ -1958,6 +1959,16 @@ declare module 'discord.js' {
     public remove(user?: UserResolvable): Promise<MessageReaction>;
   }
 
+  export class RelationshipManager extends BaseManager<Snowflake, Relationship, RelationshipResolvable> {
+    constructor(client: Client, iterable: Iterable<any> | undefined);
+    public readonly blocked: Collection<Snowflake, User>;
+    public readonly friends: Collection<Snowflake, User>;
+    public readonly incoming: Collection<Snowflake, User>;
+    public readonly outgoing: Collection<Snowflake, User>;
+    public remove(user: UserResolvable): Promise<User | null>;
+    public request(type: keyof typeof RelationshipType, user: UserResolvable): Promise<User | null | string>;
+  }
+
   export class RoleManager extends BaseManager<Snowflake, Role, RoleResolvable> {
     constructor(guild: Guild, iterable?: Iterable<any>);
     public readonly everyone: Role | null;
@@ -2228,6 +2239,7 @@ declare module 'discord.js' {
     rateLimit: [RateLimitData];
     ready: [];
     invalidated: [];
+    relationshipAdd: [Relationship, Relationship];
     roleCreate: [Role];
     roleDelete: [Role];
     roleUpdate: [Role, Role];
@@ -3005,6 +3017,8 @@ declare module 'discord.js' {
   }
 
   type UserResolvable = User | Snowflake | Message | GuildMember | string;
+
+  type RelationshipResolvable = Relationship | Snowflake;
 
   type VerificationLevel = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'VERY_HIGH';
 

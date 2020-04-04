@@ -1,21 +1,21 @@
 'use strict';
 
-const DataStore = require('./DataStore');
+const BaseManager = require('./BaseManager');
 const Relationship = require('../structures/Relationship');
-const UserStore = require('../stores/UserStore');
+const Collection = require('../util/Collection');
 
 /**
  * Stores relationships
  * @extends {DataStore}
  */
-class RelationshipStore extends DataStore {
+class RelationshipManager extends BaseManager {
   constructor(client, iterable) {
     super(client, iterable, Relationship);
   }
 
   /**
    * Get all users who are currently friends, mapped by their IDs
-   * @type {UserStore<Snowflake, User>}
+   * @type {Collection<Snowflake, User>}
    * @readonly
    */
   get friends() {
@@ -24,7 +24,7 @@ class RelationshipStore extends DataStore {
 
   /**
    * Get all users who are currently blocked, mapped by their IDs
-   * @type {UserStore<Snowflake, User>}
+   * @type {Collection<Snowflake, User>}
    * @readonly
    */
   get blocked() {
@@ -33,7 +33,7 @@ class RelationshipStore extends DataStore {
 
   /**
    * Get all users from whom we have an incoming friends request, mapped by their IDs
-   * @type {UserStore<Snowflake, User>}
+   * @type {Collection<Snowflake, User>}
    * @readonly
    */
   get incoming() {
@@ -42,7 +42,7 @@ class RelationshipStore extends DataStore {
 
   /**
    * Get all users to whom we have an outgoing friends reuqest, mapped by their IDs
-   * @type {UserStore<Snowflake, User>}
+   * @type {Collection<Snowflake, User>}
    * @readonly
    */
   get outgoing() {
@@ -105,13 +105,13 @@ class RelationshipStore extends DataStore {
    * @param {string} type The type of the relationship
    * @readonly
    * @internal
-   * @returns {UserStore<Snowflake, Users>}
+   * @returns {Collection<Snowflake, Users>}
    */
   getUsersByType(type) {
-    const users = new UserStore(this.client);
-    this.filter(rel => rel.type === type).map(rel => users.set(rel.user.id, rel.user));
+    const users = new Collection();
+    this.cache.filter(rel => rel.type === type).map(rel => users.set(rel.user.id, rel.user));
     return users;
   }
 }
 
-module.exports = RelationshipStore;
+module.exports = RelationshipManager;

@@ -39,7 +39,7 @@ class UserManager extends BaseManager {
     if (user instanceof GuildMember) return user.user;
     if (user instanceof Message) return user.author;
     if (typeof user === 'string' && user.includes('#')) {
-      return this.find(u => `${u.username}#${u.discriminator}` === user) || null;
+      return this.cache.find(u => `${u.username}#${u.discriminator}` === user) || null;
     }
     return super.resolve(user);
   }
@@ -77,7 +77,7 @@ class UserManager extends BaseManager {
       channel = undefined;
     }
     const user = super.add(data, cache);
-    if (channel) channel.recipients.add(user);
+    if (channel) channel.recipients.set(user.id, user);
     return user;
   }
 }

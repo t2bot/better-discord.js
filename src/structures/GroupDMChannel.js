@@ -2,8 +2,8 @@
 
 const Channel = require('./Channel');
 const TextBasedChannel = require('./interfaces/TextBasedChannel');
-const MessageStore = require('../stores/MessageStore');
-const RecipientStore = require('../stores/RecipientStore');
+const MessageManager = require('../managers/MessageManager');
+const Collection = require('../util/Collection');
 
 /**
  * Represents a group DM channel between multiple users.
@@ -21,17 +21,17 @@ class GroupDMChannel extends Channel {
     this.type = 'group';
     /**
      * A collection containing the messages sent to this channel
-     * @type {MessageStore<Snowflake, Message>}
+     * @type {MessageManager<Snowflake, Message>}
      */
-    this.messages = new MessageStore(this);
+    this.messages = new MessageManager(this);
     this._typing = new Map();
 
     /**
      * A collection of all participants of this group DM channel
-     * @type {UserStore<Snowflake, User>}
+     * @type {Collection<Snowflake, User>}
      */
     if (!this.recipients) {
-      this.recipients = new RecipientStore(client);
+      this.recipients = new Collection();
     }
   }
 
@@ -60,7 +60,7 @@ class GroupDMChannel extends Channel {
       if (this.recipients) {
         this.recipients.clear();
       } else {
-        this.recipients = new RecipientStore(this.client);
+        this.recipients = new Collection();
       }
       for (const recipient of data.recipients) {
         this.client.users.add(recipient, this);

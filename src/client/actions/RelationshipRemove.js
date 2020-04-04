@@ -7,11 +7,11 @@ class RelationshipRemoveAction extends Action {
   handle(data) {
     const client = this.client;
 
-    const relationship = client.user.relationships.get(data.id);
+    const relationship = client.user.relationships.cache.get(data.id);
     if (!relationship) {
       return;
     }
-    client.user.relationships.delete(data.id);
+    client.user.relationships.cache.delete(data.id);
     /**
      * Emitted whenever a relationship is removed
      * @event Client#relationshipRemove
@@ -20,6 +20,5 @@ class RelationshipRemoveAction extends Action {
     client.emit(Events.RELATIONSHIP_REMOVE, relationship);
   }
 }
-
 
 module.exports = RelationshipRemoveAction;

@@ -1,7 +1,7 @@
 'use strict';
 
+const RelationshipManager = require('../managers/RelationshipManager');
 const DataResolver = require('../util/DataResolver');
-const RelationshipStore = require('../stores/RelationshipStore');
 const Structures = require('../util/Structures');
 
 /**
@@ -15,9 +15,9 @@ class ClientUser extends Structures.get('User') {
 
     /**
      * All of the {@link Relationship}s that the client is currently handling, mapped by their IDs
-     * @type {RelationshipStore<Snowflake, Relationship>}
+     * @type {RelationshipManager<Snowflake, Relationship>}
      */
-    this.relationships = new RelationshipStore(this.client);
+    this.relationships = new RelationshipManager(this.client);
   }
 
   _patch(data) {

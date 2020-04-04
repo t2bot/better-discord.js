@@ -8,6 +8,7 @@ const { Error, TypeError, RangeError } = require('../errors');
 const ChannelManager = require('../managers/ChannelManager');
 const GuildEmojiManager = require('../managers/GuildEmojiManager');
 const GuildManager = require('../managers/GuildManager');
+const PresenceManager = require('../managers/PresenceManager');
 const UserManager = require('../managers/UserManager');
 const ShardClientUtil = require('../sharding/ShardClientUtil');
 const ClientApplication = require('../structures/ClientApplication');
@@ -126,9 +127,9 @@ class Client extends BaseClient {
 
     /**
      * All of the {@link Presence}s that the client can currently see, mapped by their IDs
-     * @type {PresenceStore<Snowflake, Presence>}
+     * @type {PresenceManager}
      */
-    this.presences = new PresenceStore(this);
+    this.presences = new PresenceManager(this);
 
     const ClientPresence = Structures.get('ClientPresence');
     /**

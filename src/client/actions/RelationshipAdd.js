@@ -7,7 +7,7 @@ class RelationshipAddAction extends Action {
   handle(data) {
     const client = this.client;
 
-    let newRelationship = client.user.relationships.get(data.id);
+    let newRelationship = client.user.relationships.cache.get(data.id);
     let oldRelationship = null;
     if (newRelationship) {
       oldRelationship = newRelationship._update(data);
