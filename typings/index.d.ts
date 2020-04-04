@@ -1,23 +1,25 @@
 declare enum ChannelType {
-  text,
-  dm,
-  voice,
-  group,
-  category,
-  news,
-  store,
-  unknown
+  text = 0,
+  dm = 1,
+  voice = 2,
+  group = 3,
+  category = 4,
+  news = 5,
+  store = 6,
+  unknown = 7,
 }
 
 declare enum RelationshipType {
-  friend,
-  block,
-  incoming,
-  outgoing,
-  unknown
+  friend = 0,
+  block = 1,
+  incoming = 2,
+  outgoing = 3,
+  unknown = 4,
 }
 
 declare module 'better-discord.js' {
+
+declare module 'discord.js' {
   import BaseCollection from '@discordjs/collection';
   import { EventEmitter } from 'events';
   import { Stream, Readable, Writable } from 'stream';
@@ -27,7 +29,7 @@ declare module 'better-discord.js' {
 
   export const version: string;
 
-//#region Classes
+  //#region Classes
 
   export class Activity {
     constructor(presence: Presence, data?: object);
@@ -72,13 +74,15 @@ declare module 'better-discord.js' {
       options?: MessageOptions | WebhookMessageOptions | MessageAdditions,
       extra?: MessageOptions | WebhookMessageOptions
     ): APIMessage;
-    public static partitionMessageAdditions(items: (MessageEmbed | MessageAttachment)[]): [MessageEmbed[], MessageAttachment[]];
+    public static partitionMessageAdditions(
+      items: (MessageEmbed | MessageAttachment)[],
+    ): [MessageEmbed[], MessageAttachment[]];
     public static resolveFile(fileLike: BufferResolvable | Stream | FileOptions | MessageAttachment): Promise<object>;
     public static transformOptions(
       content: StringResolvable,
       options: MessageOptions | WebhookMessageOptions | MessageAdditions,
       extra?: MessageOptions | WebhookMessageOptions,
-      isWebhook?: boolean
+      isWebhook?: boolean,
     ): MessageOptions | WebhookMessageOptions;
 
     public makeContent(): string | string[] | undefined;
@@ -108,10 +112,23 @@ declare module 'better-discord.js' {
     public clearTimeout(timeout: NodeJS.Timer): void;
     public clearImmediate(timeout: NodeJS.Immediate): void;
     public destroy(): void;
-    public setInterval(fn: Function, delay: number, ...args: any[]): NodeJS.Timer;
-    public setTimeout(fn: Function, delay: number, ...args: any[]): NodeJS.Timer;
-    public setImmediate(fn: Function, ...args: any[]): NodeJS.Immediate;
+    public setInterval(fn: (...args: any[]) => void, delay: number, ...args: any[]): NodeJS.Timer;
+    public setTimeout(fn: (...args: any[]) => void, delay: number, ...args: any[]): NodeJS.Timer;
+    public setImmediate(fn: (...args: any[]) => void, ...args: any[]): NodeJS.Immediate;
     public toJSON(...props: { [key: string]: boolean | string }[]): object;
+  }
+
+  export class BaseGuildEmoji extends Emoji {
+    constructor(client: Client, data: object, guild: Guild);
+    private _roles: string[];
+
+    public available: boolean;
+    public readonly createdAt: Date;
+    public readonly createdTimestamp: number;
+    public guild: Guild | GuildPreview;
+    public id: Snowflake;
+    public managed: boolean;
+    public requiresColons: boolean;
   }
 
   class BroadcastDispatcher extends VolumeMixin(StreamDispatcher) {
@@ -139,6 +156,7 @@ declare module 'better-discord.js' {
 
   export class CategoryChannel extends GuildChannel {
     public readonly children: Collection<Snowflake, GuildChannel>;
+    public type: 'category';
   }
 
   export class Channel extends Base {
@@ -148,8 +166,8 @@ declare module 'better-discord.js' {
     public deleted: boolean;
     public id: Snowflake;
     public type: keyof typeof ChannelType;
-    public delete(reason?: string): Promise<Channel>;
-    public fetch(): Promise<Channel>;
+    public delete(reason?: string): Promise<this>;
+    public fetch(): Promise<this>;
     public toString(): string;
   }
 
@@ -159,9 +177,9 @@ declare module 'better-discord.js' {
     private _eval(script: string): any;
     private _validateOptions(options?: ClientOptions): void;
 
-    public channels: ChannelStore;
-    public readonly emojis: GuildEmojiStore;
-    public guilds: GuildStore;
+    public channels: ChannelManager;
+    public readonly emojis: GuildEmojiManager;
+    public guilds: GuildManager;
     public presences: PresenceStore;
     public readyAt: Date | null;
     public readonly readyTimestamp: number | null;
@@ -169,110 +187,24 @@ declare module 'better-discord.js' {
     public token: string | null;
     public readonly uptime: number | null;
     public user: ClientUser | null;
-    public users: UserStore;
+    public users: UserManager;
     public voice: ClientVoiceManager | null;
     public ws: WebSocketManager;
     public acceptInvite(invite: InviteResolvable): Promise<Guild | null>;
     public destroy(): void;
     public fetchApplication(): Promise<ClientApplication>;
+    public fetchGuildPreview(guild: GuildResolvable): Promise<GuildPreview>;
     public fetchInvite(invite: InviteResolvable): Promise<Invite>;
     public fetchVoiceRegions(): Promise<Collection<string, VoiceRegion>>;
     public fetchWebhook(id: Snowflake, token?: string): Promise<Webhook>;
     public generateInvite(permissions?: PermissionResolvable): Promise<string>;
-    public login(token?: string, connectAsBot?: boolean): Promise<string>;
+    public login(token?: string): Promise<string>;
     public sweepMessages(lifetime?: number): number;
     public toJSON(): object;
 
-    public on(event: 'channelCreate' | 'channelDelete', listener: (channel: Channel | PartialChannel) => void): this;
-    public on(event: 'channelPinsUpdate', listener: (channel: Channel | PartialChannel, time: Date) => void): this;
-    public on(event: 'channelUpdate', listener: (oldChannel: Channel | PartialChannel, newChannel: Channel | PartialChannel) => void): this;
-    public on(event: 'debug' | 'warn', listener: (info: string) => void): this;
-    public on(event: 'disconnect', listener: (event: any, shardID: number) => void): this;
-    public on(event: 'emojiCreate' | 'emojiDelete', listener: (emoji: GuildEmoji) => void): this;
-    public on(event: 'emojiUpdate', listener: (oldEmoji: GuildEmoji, newEmoji: GuildEmoji) => void): this;
-    public on(event: 'error', listener: (error: Error) => void): this;
-    public on(event: 'guildBanAdd' | 'guildBanRemove', listener: (guild: Guild, user: User | PartialUser) => void): this;
-    public on(event: 'guildCreate' | 'guildDelete' | 'guildUnavailable', listener: (guild: Guild) => void): this;
-    public on(event: 'guildMemberAdd' | 'guildMemberAvailable' | 'guildMemberRemove', listener: (member: GuildMember | PartialGuildMember) => void): this;
-    public on(event: 'guildMembersChunk', listener: (members: Collection<Snowflake, GuildMember | PartialGuildMember>, guild: Guild) => void): this;
-    public on(event: 'guildMemberSpeaking', listener: (member: GuildMember | PartialGuildMember, speaking: Readonly<Speaking>) => void): this;
-    public on(event: 'guildMemberUpdate', listener: (oldMember: GuildMember | PartialGuildMember, newMember: GuildMember | PartialGuildMember) => void): this;
-    public on(event: 'guildUpdate', listener: (oldGuild: Guild, newGuild: Guild) => void): this;
-    public on(event: 'inviteCreate' | 'inviteDelete', listener: (invite: Invite) => void): this;
-    public on(event: 'guildIntegrationsUpdate', listener: (guild: Guild) => void): this;
-    public on(event: 'message' | 'messageDelete' | 'messageReactionRemoveAll', listener: (message: Message | PartialMessage) => void): this;
-    public on(event: 'messageReactionRemoveEmoji', listener: (reaction: MessageReaction) => void): this;
-    public on(event: 'messageDeleteBulk', listener: (messages: Collection<Snowflake, Message | PartialMessage>) => void): this;
-    public on(event: 'messageReactionAdd' | 'messageReactionRemove', listener: (messageReaction: MessageReaction, user: User | PartialUser) => void): this;
-    public on(event: 'messageUpdate', listener: (oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => void): this;
-    public on(event: 'presenceUpdate', listener: (oldPresence: Presence | undefined, newPresence: Presence) => void): this;
-    public on(event: 'rateLimit', listener: (rateLimitData: RateLimitData) => void): this;
-    public on(event: 'ready', listener: () => void): this;
-    public on(event: 'relationshipAdd', listener: (oldRelationship: Relationship | null, newRelationship: Relationship) => void): this;
-    public on(event: 'relationshipRemove', listener: (relationship: Relationship) => void): this;
-    public on(event: 'roleCreate' | 'roleDelete', listener: (role: Role) => void): this;
-    public on(event: 'roleUpdate', listener: (oldRole: Role, newRole: Role) => void): this;
-    public on(event: 'typingStart' | 'typingStop', listener: (channel: Channel | PartialChannel, user: User | PartialUser) => void): this;
-    public on(event: 'userUpdate', listener: (oldUser: User | PartialUser, newUser: User | PartialUser) => void): this;
-    public on(event: 'voiceStateUpdate', listener: (oldState: VoiceState, newState: VoiceState) => void): this;
-    public on(event: 'webhookUpdate', listener: (channel: TextChannel) => void): this;
-    public on(event: 'invalidated', listener: () => void): this;
-    public on(event: 'shardDisconnect', listener: (event: CloseEvent, id: number) => void): this;
-    public on(event: 'shardError', listener: (error: Error, id: number) => void): this;
-    public on(event: 'shardReconnecting', listener: (id: number) => void): this;
-    public on(event: 'shardReady', listener: (id: number) => void): this;
-    public on(event: 'shardResume', listener: (id: number, replayed: number) => void): this;
-    public on(event: string, listener: Function): this;
+    public on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this;
 
-    public once(event: 'channelCreate' | 'channelDelete', listener: (channel: Channel | PartialChannel) => void): this;
-    public once(event: 'channelPinsUpdate', listener: (channel: Channel | PartialChannel, time: Date) => void): this;
-    public once(event: 'channelUpdate', listener: (oldChannel: Channel | PartialChannel, newChannel: Channel | PartialChannel) => void): this;
-    public once(event: 'debug' | 'warn', listener: (info: string) => void): this;
-    public once(event: 'disconnect', listener: (event: any, shardID: number) => void): this;
-    public once(event: 'emojiCreate' | 'emojiDelete', listener: (emoji: GuildEmoji) => void): this;
-    public once(event: 'emojiUpdate', listener: (oldEmoji: GuildEmoji, newEmoji: GuildEmoji) => void): this;
-    public once(event: 'error', listener: (error: Error) => void): this;
-    public once(event: 'guildBanAdd' | 'guildBanRemove', listener: (guild: Guild, user: User | PartialUser) => void): this;
-    public once(event: 'guildCreate' | 'guildDelete' | 'guildUnavailable', listener: (guild: Guild) => void): this;
-    public once(event: 'guildMemberAdd' | 'guildMemberAvailable' | 'guildMemberRemove', listener: (member: GuildMember | PartialGuildMember) => void): this;
-    public once(event: 'guildMembersChunk', listener: (members: Collection<Snowflake, GuildMember | PartialGuildMember>, guild: Guild) => void): this;
-    public once(event: 'guildMemberSpeaking', listener: (member: GuildMember | PartialGuildMember, speaking: Readonly<Speaking>) => void): this;
-    public once(event: 'guildMemberUpdate', listener: (oldMember: GuildMember | PartialGuildMember, newMember: GuildMember | PartialGuildMember) => void): this;
-    public once(event: 'guildUpdate', listener: (oldGuild: Guild, newGuild: Guild) => void): this;
-    public once(event: 'guildIntegrationsUpdate', listener: (guild: Guild) => void): this;
-    public once(event: 'message' | 'messageDelete' | 'messageReactionRemoveAll', listener: (message: Message | PartialMessage) => void): this;
-    public once(event: 'messageDeleteBulk', listener: (messages: Collection<Snowflake, Message | PartialMessage>) => void): this;
-    public once(event: 'messageReactionAdd' | 'messageReactionRemove', listener: (messageReaction: MessageReaction, user: User | PartialUser) => void): this;
-    public once(event: 'messageUpdate', listener: (oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => void): this;
-    public once(event: 'presenceUpdate', listener: (oldPresence: Presence | undefined, newPresence: Presence) => void): this;
-    public once(event: 'rateLimit', listener: (rateLimitData: RateLimitData) => void): this;
-    public once(event: 'ready', listener: () => void): this;
-    public once(event: 'relationshipAdd', listener: (oldRelationship: Relationship | null, newRelationship: Relationship) => void): this;
-    public once(event: 'relationshipRemove', listener: (relationship: Relationship) => void): this;
-    public once(event: 'roleCreate' | 'roleDelete', listener: (role: Role) => void): this;
-    public once(event: 'roleUpdate', listener: (oldRole: Role, newRole: Role) => void): this;
-    public once(event: 'typingStart' | 'typingStop', listener: (channel: Channel | PartialChannel, user: User | PartialUser) => void): this;
-    public once(event: 'userUpdate', listener: (oldUser: User | PartialUser, newUser: User | PartialUser) => void): this;
-    public once(event: 'voiceStateUpdate', listener: (oldState: VoiceState, newState: VoiceState) => void): this;
-    public once(event: 'webhookUpdate', listener: (channel: TextChannel) => void): this;
-    public once(event: 'invalidated', listener: () => void): this;
-    public once(event: 'shardDisconnect', listener: (event: CloseEvent, id: number) => void): this;
-    public once(event: 'shardError', listener: (error: Error, id: number) => void): this;
-    public once(event: 'shardReconnecting', listener: (id: number) => void): this;
-    public once(event: 'shardReady', listener: (id: number) => void): this;
-    public once(event: 'shardResume', listener: (id: number, replayed: number) => void): this;
-    public once(event: string, listener: Function): this;
-  }
-
-  export class ClientVoiceManager {
-    constructor(client: Client);
-    public readonly client: Client;
-    public connections: Collection<Snowflake, VoiceConnection>;
-    public broadcasts: VoiceBroadcast[];
-
-    private joinChannel(channel: VoiceChannel): Promise<VoiceConnection>;
-
-    public createBroadcast(): VoiceBroadcast;
+    public once<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this;
   }
 
   export class ClientApplication extends Base {
@@ -295,44 +227,8 @@ declare module 'better-discord.js' {
     public toString(): string;
   }
 
-  export class Team extends Base {
-    constructor(client: Client, data: object);
-    public id: Snowflake;
-    public name: string;
-    public icon: string | null;
-    public ownerID: Snowflake | null;
-    public members: Collection<Snowflake, TeamMember>;
-
-    public readonly owner: TeamMember;
-    public readonly createdAt: Date;
-    public readonly createdTimestamp: number;
-
-    public iconURL(options?: ImageURLOptions): string;
-    public toJSON(): object;
-    public toString(): string;
-  }
-
-  export class TeamMember extends Base {
-    constructor(team: Team, data: object);
-    public team: Team;
-    public readonly id: Snowflake;
-    public permissions: string[];
-    public membershipState: MembershipStates;
-    public user: User;
-
-    public toString(): string;
-  }
-
-  export interface ActivityOptions {
-    name?: string;
-    url?: string;
-    type?: ActivityType | number;
-    shardID?: number | number[];
-  }
-
   export class ClientUser extends User {
     public mfaEnabled: boolean;
-    public relationships: RelationshipStore;
     public verified: boolean;
     public setActivity(options?: ActivityOptions): Promise<Presence>;
     public setActivity(name: string, options?: ActivityOptions): Promise<Presence>;
@@ -343,14 +239,15 @@ declare module 'better-discord.js' {
     public setUsername(username: string): Promise<ClientUser>;
   }
 
-  export class Collection<K, V> extends BaseCollection<K, V> {
-    public flatMap<T>(fn: (value: V, key: K, collection: this) => Collection<K, T>): Collection<K, T>;
-    public flatMap<T, This>(fn: (this: This, value: V, key: K, collection: this) => Collection<K, T>, thisArg: This): Collection<K, T>;
-    public flatMap<T>(fn: (value: V, key: K, collection: this) => Collection<K, T>, thisArg?: unknown): Collection<K, T>;
-    public mapValues<T>(fn: (value: V, key: K, collection: this) => T): Collection<K, T>;
-    public mapValues<This, T>(fn: (this: This, value: V, key: K, collection: this) => T, thisArg: This): Collection<K, T>;
-    public mapValues<T>(fn: (value: V, key: K, collection: this) => T, thisArg?: unknown): Collection<K, T>;
-    public toJSON(): object;
+  export class ClientVoiceManager {
+    constructor(client: Client);
+    public readonly client: Client;
+    public connections: Collection<Snowflake, VoiceConnection>;
+    public broadcasts: VoiceBroadcast[];
+
+    private joinChannel(channel: VoiceChannel): Promise<VoiceConnection>;
+
+    public createBroadcast(): VoiceBroadcast;
   }
 
   export abstract class Collector<K, V> extends EventEmitter {
@@ -368,26 +265,25 @@ declare module 'better-discord.js' {
     public handleCollect(...args: any[]): void;
     public handleDispose(...args: any[]): void;
     public stop(reason?: string): void;
+    public resetTimer(options?: { time?: number; idle?: number }): void;
     public [Symbol.asyncIterator](): AsyncIterableIterator<V>;
     public toJSON(): object;
 
-    protected listener: Function;
+    protected listener: (...args: any[]) => void;
     public abstract collect(...args: any[]): K;
     public abstract dispose(...args: any[]): K;
     public abstract endReason(): void;
 
-    public on(event: 'collect', listener: (...args: any[]) => void): this;
-    public on(event: 'dispose', listener: (...args: any[]) => void): this;
+    public on(event: 'collect' | 'dispose', listener: (...args: any[]) => void): this;
     public on(event: 'end', listener: (collected: Collection<K, V>, reason: string) => void): this;
 
-    public once(event: 'collect', listener: (...args: any[]) => void): this;
-    public once(event: 'dispose', listener: (...args: any[]) => void): this;
+    public once(event: 'collect' | 'dispose', listener: (...args: any[]) => void): this;
     public once(event: 'end', listener: (collected: Collection<K, V>, reason: string) => void): this;
   }
 
   type AllowedImageFormat = 'webp' | 'png' | 'jpg' | 'gif';
 
-  export interface Constants {
+  export const Constants: {
     Package: {
       name: string;
       version: string;
@@ -399,7 +295,7 @@ declare module 'better-discord.js' {
       homepage: string;
       keywords: string[];
       bugs: { url: string };
-      repository: { type: string, url: string };
+      repository: { type: string; url: string };
       browser: { [key: string]: boolean };
       scripts: { [key: string]: string };
       engines: { [key: string]: string };
@@ -414,7 +310,9 @@ declare module 'better-discord.js' {
     Endpoints: {
       botGateway: string;
       invite: (root: string, code: string) => string;
-      CDN: (root: string) => {
+      CDN: (
+        root: string,
+      ) => {
         Asset: (name: string) => string;
         DefaultAvatar: (id: string | number) => string;
         Emoji: (emojiID: string, format: 'png' | 'gif') => string;
@@ -424,7 +322,8 @@ declare module 'better-discord.js' {
         AppIcon: (userID: string | number, hash: string, format: AllowedImageFormat, size: number) => string;
         AppAsset: (userID: string | number, hash: string, format: AllowedImageFormat, size: number) => string;
         GDMIcon: (userID: string | number, hash: string, format: AllowedImageFormat, size: number) => string;
-        Splash: (userID: string | number, hash: string, format: AllowedImageFormat, size: number) => string;
+        Splash: (guildID: string | number, hash: string, format: AllowedImageFormat, size: number) => string;
+        DiscoverySplash: (guildID: string | number, hash: string, format: AllowedImageFormat, size: number) => string;
         TeamIcon: (teamID: string | number, hash: string, format: AllowedImageFormat, size: number) => string;
       };
     };
@@ -441,6 +340,8 @@ declare module 'better-discord.js' {
       GUILD_CREATE: 'guildCreate';
       GUILD_DELETE: 'guildDelete';
       GUILD_UPDATE: 'guildUpdate';
+      INVITE_CREATE: 'inviteCreate';
+      INVITE_DELETE: 'inviteDelete';
       GUILD_UNAVAILABLE: 'guildUnavailable';
       GUILD_MEMBER_ADD: 'guildMemberAdd';
       GUILD_MEMBER_REMOVE: 'guildMemberRemove';
@@ -503,34 +404,34 @@ declare module 'better-discord.js' {
     };
     Colors: {
       DEFAULT: 0x000000;
-      WHITE: 0xFFFFFF;
-      AQUA: 0x1ABC9C;
-      GREEN: 0x2ECC71;
-      BLUE: 0x3498DB;
-      YELLOW: 0xFFFF00;
-      PURPLE: 0x9B59B6;
-      LUMINOUS_VIVID_PINK: 0xE91E63;
-      GOLD: 0xF1C40F;
-      ORANGE: 0xE67E22;
-      RED: 0xE74C3C;
-      GREY: 0x95A5A6;
-      NAVY: 0x34495E;
-      DARK_AQUA: 0x11806A;
-      DARK_GREEN: 0x1F8B4C;
+      WHITE: 0xffffff;
+      AQUA: 0x1abc9c;
+      GREEN: 0x2ecc71;
+      BLUE: 0x3498db;
+      YELLOW: 0xffff00;
+      PURPLE: 0x9b59b6;
+      LUMINOUS_VIVID_PINK: 0xe91e63;
+      GOLD: 0xf1c40f;
+      ORANGE: 0xe67e22;
+      RED: 0xe74c3c;
+      GREY: 0x95a5a6;
+      NAVY: 0x34495e;
+      DARK_AQUA: 0x11806a;
+      DARK_GREEN: 0x1f8b4c;
       DARK_BLUE: 0x206694;
-      DARK_PURPLE: 0x71368A;
-      DARK_VIVID_PINK: 0xAD1457;
-      DARK_GOLD: 0xC27C0E;
-      DARK_ORANGE: 0xA84300;
-      DARK_RED: 0x992D22;
-      DARK_GREY: 0x979C9F;
-      DARKER_GREY: 0x7F8C8D;
-      LIGHT_GREY: 0xBCC0C0;
-      DARK_NAVY: 0x2C3E50;
-      BLURPLE: 0x7289DA;
-      GREYPLE: 0x99AAB5;
-      DARK_BUT_NOT_BLACK: 0x2C2F33;
-      NOT_QUITE_BLACK: 0x23272A;
+      DARK_PURPLE: 0x71368a;
+      DARK_VIVID_PINK: 0xad1457;
+      DARK_GOLD: 0xc27c0e;
+      DARK_ORANGE: 0xa84300;
+      DARK_RED: 0x992d22;
+      DARK_GREY: 0x979c9f;
+      DARKER_GREY: 0x7f8c8d;
+      LIGHT_GREY: 0xbcc0c0;
+      DARK_NAVY: 0x2c3e50;
+      BLURPLE: 0x7289da;
+      GREYPLE: 0x99aab5;
+      DARK_BUT_NOT_BLACK: 0x2c2f33;
+      NOT_QUITE_BLACK: 0x23272a;
     };
     Status: {
       READY: 0;
@@ -640,9 +541,11 @@ declare module 'better-discord.js' {
     };
     MessageTypes: MessageType[];
     ActivityTypes: ActivityType[];
+    ExplicitContentFilterLevels: ExplicitContentFilterLevel[];
     DefaultMessageNotifications: DefaultMessageNotifications[];
+    VerificationLevels: VerificationLevel[];
     MembershipStates: 'INVITED' | 'ACCEPTED';
-  }
+  };
 
   export class DataResolver {
     public static resolveBase64(data: Base64Resolvable): string;
@@ -663,10 +566,11 @@ declare module 'better-discord.js' {
 
   export class DMChannel extends TextBasedChannel(Channel) {
     constructor(client: Client, data?: object);
-    public messages: MessageStore;
+    public messages: MessageManager;
     public recipient: User;
     public readonly partial: false;
-    public fetch(): Promise<DMChannel>;
+    public type: 'dm';
+    public fetch(): Promise<this>;
   }
 
   export class Emoji extends Base {
@@ -686,10 +590,10 @@ declare module 'better-discord.js' {
   export class GroupDMChannel extends TextBasedChannel(Channel) {
     constructor(client: Client, data?: object);
     public icon: string | null;
-    public messages: MessageStore;
+    public messages: MessageManager;
     public name: string | null;
     public readonly owner: User;
-    public readonly partial: boolean;
+    public readonly partial: false;
     public recipients: RecipientStore;
     public iconURL(options?: ImageURLOptions & { dynamic?: boolean }): string | null;
   }
@@ -700,13 +604,13 @@ declare module 'better-discord.js' {
     private _sortedChannels(channel: Channel): Collection<Snowflake, GuildChannel>;
     private _memberSpeakUpdate(user: Snowflake, speaking: boolean): void;
 
-    public readonly afkChannel: VoiceChannel;
-    public afkChannelID: Snowflake;
+    public readonly afkChannel: VoiceChannel | null;
+    public afkChannelID: Snowflake | null;
     public afkTimeout: number;
-    public applicationID: Snowflake;
+    public applicationID: Snowflake | null;
     public available: boolean;
     public banner: string | null;
-    public channels: GuildChannelStore;
+    public channels: GuildChannelManager;
     public readonly createdAt: Date;
     public readonly createdTimestamp: number;
     public defaultMessageNotifications: DefaultMessageNotifications | number;
@@ -715,8 +619,8 @@ declare module 'better-discord.js' {
     public embedChannel: GuildChannel | null;
     public embedChannelID: Snowflake | null;
     public embedEnabled: boolean;
-    public emojis: GuildEmojiStore;
-    public explicitContentFilter: number;
+    public emojis: GuildEmojiManager;
+    public explicitContentFilter: ExplicitContentFilterLevel;
     public features: GuildFeatures[];
     public icon: string | null;
     public id: Snowflake;
@@ -727,7 +631,7 @@ declare module 'better-discord.js' {
     public maximumPresences: number | null;
     public readonly me: GuildMember | null;
     public memberCount: number;
-    public members: GuildMemberStore;
+    public members: GuildMemberManager;
     public mfaLevel: number;
     public name: string;
     public readonly nameAcronym: string;
@@ -736,9 +640,13 @@ declare module 'better-discord.js' {
     public readonly partnered: boolean;
     public premiumSubscriptionCount: number | null;
     public premiumTier: PremiumTier;
-    public presences: PresenceStore;
+    public presences: PresenceManager;
+    public readonly publicUpdatesChannel: TextChannel | null;
+    public publicUpdatesChannelID: Snowflake | null;
     public region: string;
-    public roles: RoleStore;
+    public roles: RoleManager;
+    public readonly rulesChannel: TextChannel | null;
+    public rulesChannelID: Snowflake | null;
     public readonly shard: WebSocketShard;
     public shardID: number;
     public splash: string | null;
@@ -746,10 +654,10 @@ declare module 'better-discord.js' {
     public systemChannelFlags: Readonly<SystemChannelFlags>;
     public systemChannelID: Snowflake | null;
     public vanityURLCode: string | null;
-    public verificationLevel: number;
+    public verificationLevel: VerificationLevel;
     public readonly verified: boolean;
     public readonly voice: VoiceState | null;
-    public readonly voiceStates: VoiceStateStore;
+    public readonly voiceStates: VoiceStateManager;
     public readonly widgetChannel: TextChannel | null;
     public widgetChannelID: Snowflake | null;
     public widgetEnabled: boolean | null;
@@ -761,11 +669,12 @@ declare module 'better-discord.js' {
     public equals(guild: Guild): boolean;
     public fetch(): Promise<Guild>;
     public fetchAuditLogs(options?: GuildAuditLogsFetchOptions): Promise<GuildAuditLogs>;
-    public fetchBan(user: UserResolvable): Promise<{ user: User, reason: string }>;
-    public fetchBans(): Promise<Collection<Snowflake, { user: User, reason: string }>>;
+    public fetchBan(user: UserResolvable): Promise<{ user: User; reason: string }>;
+    public fetchBans(): Promise<Collection<Snowflake, { user: User; reason: string }>>;
     public fetchEmbed(): Promise<GuildEmbedData>;
     public fetchIntegrations(): Promise<Collection<string, Integration>>;
     public fetchInvites(): Promise<Collection<string, Invite>>;
+    public fetchPreview(): Promise<GuildPreview>;
     public fetchVanityCode(): Promise<string>;
     public fetchVoiceRegions(): Promise<Collection<string, VoiceRegion>>;
     public fetchWebhooks(): Promise<Collection<Snowflake, Webhook>>;
@@ -776,9 +685,12 @@ declare module 'better-discord.js' {
     public setAFKTimeout(afkTimeout: number, reason?: string): Promise<Guild>;
     public setBanner(banner: Base64Resolvable | null, reason?: string): Promise<Guild>;
     public setChannelPositions(channelPositions: ChannelPosition[]): Promise<Guild>;
-    public setDefaultMessageNotifications(defaultMessageNotifications: DefaultMessageNotifications | number, reason?: string): Promise<Guild>;
+    public setDefaultMessageNotifications(
+      defaultMessageNotifications: DefaultMessageNotifications | number,
+      reason?: string,
+    ): Promise<Guild>;
     public setEmbed(embed: GuildEmbedData, reason?: string): Promise<Guild>;
-    public setExplicitContentFilter(explicitContentFilter: number, reason?: string): Promise<Guild>;
+    public setExplicitContentFilter(explicitContentFilter: ExplicitContentFilterLevel, reason?: string): Promise<Guild>;
     public setIcon(icon: Base64Resolvable | null, reason?: string): Promise<Guild>;
     public setName(name: string, reason?: string): Promise<Guild>;
     public setOwner(owner: GuildMemberResolvable, reason?: string): Promise<Guild>;
@@ -787,7 +699,7 @@ declare module 'better-discord.js' {
     public setSplash(splash: Base64Resolvable | null, reason?: string): Promise<Guild>;
     public setSystemChannel(systemChannel: ChannelResolvable | null, reason?: string): Promise<Guild>;
     public setSystemChannelFlags(systemChannelFlags: SystemChannelFlagsResolvable, reason?: string): Promise<Guild>;
-    public setVerificationLevel(verificationLevel: number, reason?: string): Promise<Guild>;
+    public setVerificationLevel(verificationLevel: VerificationLevel, reason?: string): Promise<Guild>;
     public splashURL(options?: ImageURLOptions): string | null;
     public toJSON(): object;
     public toString(): string;
@@ -796,6 +708,7 @@ declare module 'better-discord.js' {
   export class GuildAuditLogs {
     constructor(guild: Guild, data: object);
     private webhooks: Collection<Snowflake, Webhook>;
+    private integrations: Collection<Snowflake, Integration>;
 
     public entries: Collection<Snowflake, GuildAuditLogsEntry>;
 
@@ -819,7 +732,7 @@ declare module 'better-discord.js' {
     public extra: object | Role | GuildMember | null;
     public id: Snowflake;
     public reason: string | null;
-    public target: Guild | User | Role | GuildEmoji | Invite | Webhook;
+    public target: Guild | User | Role | GuildEmoji | Invite | Webhook | Integration | null;
     public targetType: GuildAuditLogsTarget;
     public toJSON(): object;
   }
@@ -841,39 +754,42 @@ declare module 'better-discord.js' {
     public readonly permissionsLocked: boolean | null;
     public readonly position: number;
     public rawPosition: number;
+    public type: Exclude<keyof typeof ChannelType, 'dm' | 'group' | 'unknown'>;
     public readonly viewable: boolean;
     public clone(options?: GuildChannelCloneOptions): Promise<this>;
     public createInvite(options?: InviteOptions): Promise<Invite>;
-    public createOverwrite(userOrRole: RoleResolvable | UserResolvable, options: PermissionOverwriteOption, reason?: string): Promise<this>;
+    public createOverwrite(
+      userOrRole: RoleResolvable | UserResolvable,
+      options: PermissionOverwriteOption,
+      reason?: string,
+    ): Promise<this>;
     public edit(data: ChannelData, reason?: string): Promise<this>;
     public equals(channel: GuildChannel): boolean;
     public fetchInvites(): Promise<Collection<string, Invite>>;
     public lockPermissions(): Promise<this>;
-    public overwritePermissions(options?: { permissionOverwrites?: OverwriteResolvable[] | Collection<Snowflake, OverwriteResolvable>, reason?: string }): Promise<this>;
+    public overwritePermissions(
+      overwrites: OverwriteResolvable[] | Collection<Snowflake, OverwriteResolvable>,
+      reason?: string,
+    ): Promise<this>;
     public permissionsFor(memberOrRole: GuildMemberResolvable | RoleResolvable): Readonly<Permissions> | null;
     public setName(name: string, reason?: string): Promise<this>;
-    public setParent(channel: GuildChannel | Snowflake, options?: { lockPermissions?: boolean, reason?: string }): Promise<this>;
-    public setPosition(position: number, options?: { relative?: boolean, reason?: string }): Promise<this>;
+    public setParent(
+      channel: CategoryChannel | Snowflake,
+      options?: { lockPermissions?: boolean; reason?: string },
+    ): Promise<this>;
+    public setPosition(position: number, options?: { relative?: boolean; reason?: string }): Promise<this>;
     public setTopic(topic: string, reason?: string): Promise<this>;
-    public updateOverwrite(userOrRole: RoleResolvable | UserResolvable, options: PermissionOverwriteOption, reason?: string): Promise<this>;
+    public updateOverwrite(
+      userOrRole: RoleResolvable | UserResolvable,
+      options: PermissionOverwriteOption,
+      reason?: string,
+    ): Promise<this>;
   }
 
-  export class StoreChannel extends GuildChannel {
-    constructor(guild: Guild, data?: object);
-    public nsfw: boolean;
-  }
-
-  export class GuildEmoji extends Emoji {
-    constructor(client: Client, data: object, guild: Guild);
-    private _roles: string[];
-
-    public available: boolean;
+  export class GuildEmoji extends BaseGuildEmoji {
     public readonly deletable: boolean;
     public guild: Guild;
-    public id: Snowflake;
-    public managed: boolean;
-    public requiresColons: boolean;
-    public roles: GuildEmojiRoleStore;
+    public readonly roles: GuildEmojiRoleManager;
     public readonly url: string;
     public delete(reason?: string): Promise<GuildEmoji>;
     public edit(data: GuildEmojiEditData, reason?: string): Promise<GuildEmoji>;
@@ -894,6 +810,7 @@ declare module 'better-discord.js' {
     public readonly joinedAt: Date | null;
     public joinedTimestamp: number | null;
     public readonly kickable: boolean;
+    public lastMessageChannelID: Snowflake | null;
     public readonly manageable: boolean;
     public nickname: string | null;
     public readonly partial: false;
@@ -901,7 +818,7 @@ declare module 'better-discord.js' {
     public readonly premiumSince: Date | null;
     public premiumSinceTimestamp: number | null;
     public readonly presence: Presence;
-    public roles: GuildMemberRoleStore;
+    public readonly roles: GuildMemberRoleManager;
     public user: User;
     public readonly voice: VoiceState;
     public ban(options?: BanOptions): Promise<GuildMember>;
@@ -909,13 +826,50 @@ declare module 'better-discord.js' {
     public createDM(): Promise<DMChannel>;
     public deleteDM(): Promise<DMChannel>;
     public edit(data: GuildMemberEditData, reason?: string): Promise<GuildMember>;
-    public hasPermission(permission: PermissionResolvable, options?: { checkAdmin?: boolean; checkOwner?: boolean }): boolean;
+    public hasPermission(
+      permission: PermissionResolvable,
+      options?: { checkAdmin?: boolean; checkOwner?: boolean },
+    ): boolean;
     public kick(reason?: string): Promise<GuildMember>;
     public permissionsIn(channel: ChannelResolvable): Readonly<Permissions>;
     public setNickname(nickname: string, reason?: string): Promise<GuildMember>;
     public toJSON(): object;
     public toString(): string;
     public valueOf(): string;
+  }
+
+  export class GuildPreview extends Base {
+    constructor(client: Client, data: object);
+    public approximateMemberCount: number;
+    public approximatePresenceCount: number;
+    public description?: string;
+    public discoverySplash: string | null;
+    public emojis: Collection<Snowflake, GuildPreviewEmoji>;
+    public features: GuildFeatures;
+    public icon: string | null;
+    public id: string;
+    public name: string;
+    public splash: string | null;
+    public discoverySplashURL(options?: ImageURLOptions): string | null;
+    public iconURL(options?: ImageURLOptions & { dynamic?: boolean }): string | null;
+    public splashURL(options?: ImageURLOptions): string | null;
+    public fetch(): Promise<GuildPreview>;
+    public toJSON(): object;
+    public toString(): string;
+  }
+
+  export class GuildPreviewEmoji extends BaseGuildEmoji {
+    constructor(client: Client, data: object, guild: GuildPreview);
+    public guild: GuildPreview;
+    public readonly roles: Set<Snowflake>;
+  }
+
+  export class HTTPError extends Error {
+    constructor(message: string, name: string, code: number, method: string, path: string);
+    public code: number;
+    public method: string;
+    public name: string;
+    public path: string;
   }
 
   export class Integration extends Base {
@@ -937,17 +891,17 @@ declare module 'better-discord.js' {
     public sync(): Promise<Integration>;
   }
 
-  export class HTTPError extends Error {
-    constructor(message: string, name: string, code: number, method: string, path: string);
-    public code: number;
-    public method: string;
-    public name: string;
-    public path: string;
+  export class Intents extends BitField<IntentsString> {
+    public static FLAGS: Record<IntentsString, number>;
+    public static PRIVILEGED: number;
+    public static ALL: number;
+    public static NON_PRIVILEGED: number;
+    public static resolve(bit?: BitFieldResolvable<IntentsString>): number;
   }
 
   export class Invite extends Base {
     constructor(client: Client, data: object);
-    public channel: GuildChannel;
+    public channel: GuildChannel | PartialGroupDMChannel;
     public code: string;
     public readonly deletable: boolean;
     public readonly createdAt: Date | null;
@@ -970,11 +924,6 @@ declare module 'better-discord.js' {
     public toString(): string;
   }
 
-  export class MessageFlags extends BitField<MessageFlagsString> {
-    public static FLAGS: Record<MessageFlagsString, number>;
-    public static resolve(bit?: BitFieldResolvable<MessageFlagsString>): number;
-  }
-
   export class Message extends Base {
     constructor(client: Client, data: object, channel: TextChannel | DMChannel);
     private _edits: Message[];
@@ -984,7 +933,7 @@ declare module 'better-discord.js' {
     public application: ClientApplication | null;
     public attachments: Collection<Snowflake, MessageAttachment>;
     public author: User;
-    public channel: TextChannel | DMChannel | GroupDMChannel;
+    public channel: TextChannel | DMChannel | GroupDMChannel | NewsChannel;
     public readonly cleanContent: string;
     public content: string;
     public readonly createdAt: Date;
@@ -1004,7 +953,7 @@ declare module 'better-discord.js' {
     public readonly partial: false;
     public readonly pinnable: boolean;
     public pinned: boolean;
-    public reactions: ReactionStore;
+    public reactions: ReactionManager;
     public system: boolean;
     public tts: boolean;
     public type: MessageType;
@@ -1012,9 +961,12 @@ declare module 'better-discord.js' {
     public webhookID: Snowflake | null;
     public flags: Readonly<MessageFlags>;
     public reference: MessageReference | null;
-    public awaitReactions(filter: CollectorFilter, options?: AwaitReactionsOptions): Promise<Collection<Snowflake, MessageReaction>>;
+    public awaitReactions(
+      filter: CollectorFilter,
+      options?: AwaitReactionsOptions,
+    ): Promise<Collection<Snowflake, MessageReaction>>;
     public createReactionCollector(filter: CollectorFilter, options?: ReactionCollectorOptions): ReactionCollector;
-    public delete(options?: { timeout?: number, reason?: string }): Promise<Message>;
+    public delete(options?: { timeout?: number; reason?: string }): Promise<Message>;
     public edit(content: StringResolvable, options?: MessageEditOptions | MessageEmbed): Promise<Message>;
     public edit(options: MessageEditOptions | MessageEmbed | APIMessage): Promise<Message>;
     public equals(message: Message, rawData: object): boolean;
@@ -1022,12 +974,27 @@ declare module 'better-discord.js' {
     public fetch(): Promise<Message>;
     public pin(): Promise<Message>;
     public react(emoji: EmojiIdentifierResolvable): Promise<MessageReaction>;
-    public reply(content?: StringResolvable, options?: MessageOptions | MessageAdditions): Promise<Message>;
-    public reply(content?: StringResolvable, options?: MessageOptions & { split?: false } | MessageAdditions): Promise<Message>;
-    public reply(content?: StringResolvable, options?: MessageOptions & { split: true | SplitOptions } | MessageAdditions): Promise<Message[]>;
-    public reply(options?: MessageOptions | MessageAdditions | APIMessage): Promise<Message>;
-    public reply(options?: MessageOptions & { split?: false } | MessageAdditions | APIMessage): Promise<Message>;
-    public reply(options?: MessageOptions & { split: true | SplitOptions } | MessageAdditions | APIMessage): Promise<Message[]>;
+    public reply(
+      content?: StringResolvable,
+      options?: MessageOptions | MessageAdditions | (MessageOptions & { split?: false }) | MessageAdditions,
+    ): Promise<Message>;
+    public reply(
+      content?: StringResolvable,
+      options?: (MessageOptions & { split: true | SplitOptions }) | MessageAdditions,
+    ): Promise<Message[]>;
+    public reply(
+      options?:
+        | MessageOptions
+        | MessageAdditions
+        | APIMessage
+        | (MessageOptions & { split?: false })
+        | MessageAdditions
+        | APIMessage,
+    ): Promise<Message>;
+    public reply(
+      options?: (MessageOptions & { split: true | SplitOptions }) | MessageAdditions | APIMessage,
+    ): Promise<Message[]>;
+    public suppressEmbeds(suppress?: boolean): Promise<Message>;
     public toJSON(): object;
     public toString(): string;
     public unpin(): Promise<Message>;
@@ -1042,9 +1009,9 @@ declare module 'better-discord.js' {
     public name?: string;
     public proxyURL: string;
     public size: number;
+    public readonly spoiler: boolean;
     public url: string;
     public width: number | null;
-    public readonly spoiler: boolean;
     public setFile(attachment: BufferResolvable | Stream, name?: string): this;
     public setName(name: string): this;
     public toJSON(): object;
@@ -1066,27 +1033,25 @@ declare module 'better-discord.js' {
 
   export class MessageEmbed {
     constructor(data?: MessageEmbed | MessageEmbedOptions);
-    private _apiTransform(): MessageEmbedOptions;
-
-    public author: { name?: string; url?: string; iconURL?: string; proxyIconURL?: string } | null;
-    public color: number;
+    public author: MessageEmbedAuthor | null;
+    public color?: number;
     public readonly createdAt: Date | null;
-    public description: string;
+    public description?: string;
     public fields: EmbedField[];
     public files: (MessageAttachment | string | FileOptions)[];
-    public footer: { text?: string; iconURL?: string; proxyIconURL?: string } | null;
+    public footer: MessageEmbedFooter | null;
     public readonly hexColor: string | null;
-    public image: { url: string; proxyURL?: string; height?: number; width?: number; } | null;
+    public image: MessageEmbedImage | null;
     public readonly length: number;
-    public provider: { name: string; url: string; };
-    public thumbnail: { url: string; proxyURL?: string; height?: number; width?: number; } | null;
+    public provider: MessageEmbedProvider | null;
+    public thumbnail: MessageEmbedThumbnail | null;
     public timestamp: number | null;
-    public title: string;
+    public title?: string;
     public type: string;
-    public url: string;
-    public readonly video: { url?: string; proxyURL?: string; height?: number; width?: number } | null;
-    public addBlankField(inline?: boolean): this;
+    public url?: string;
+    public readonly video: MessageEmbedVideo | null;
     public addField(name: StringResolvable, value: StringResolvable, inline?: boolean): this;
+    public addFields(...fields: EmbedFieldData[] | EmbedFieldData[][]): this;
     public attachFiles(file: (MessageAttachment | FileOptions | string)[]): this;
     public setAuthor(name: StringResolvable, iconURL?: string, url?: string): this;
     public setColor(color: ColorResolvable): this;
@@ -1097,14 +1062,29 @@ declare module 'better-discord.js' {
     public setTimestamp(timestamp?: Date | number): this;
     public setTitle(title: StringResolvable): this;
     public setURL(url: string): this;
-    public spliceField(index: number, deleteCount: number, name?: StringResolvable, value?: StringResolvable, inline?: boolean): this;
+    public spliceFields(index: number, deleteCount: number, ...fields: EmbedFieldData[] | EmbedFieldData[][]): this;
     public toJSON(): object;
 
-    public static checkField(name: StringResolvable, value: StringResolvable, inline?: boolean): Required<EmbedField>;
+    public static normalizeField(
+      name: StringResolvable,
+      value: StringResolvable,
+      inline?: boolean,
+    ): Required<EmbedFieldData>;
+    public static normalizeFields(...fields: EmbedFieldData[] | EmbedFieldData[][]): Required<EmbedFieldData>[];
+  }
+
+  export class MessageFlags extends BitField<MessageFlagsString> {
+    public static FLAGS: Record<MessageFlagsString, number>;
+    public static resolve(bit?: BitFieldResolvable<MessageFlagsString>): number;
   }
 
   export class MessageMentions {
-    constructor(message: Message, users: object[] | Collection<Snowflake, User>, roles: Snowflake[] | Collection<Snowflake, Role>, everyone: boolean);
+    constructor(
+      message: Message,
+      users: object[] | Collection<Snowflake, User>,
+      roles: Snowflake[] | Collection<Snowflake, Role>,
+      everyone: boolean,
+    );
     private _channels: Collection<Snowflake, GuildChannel> | null;
     private readonly _content: Message;
     private _members: Collection<Snowflake, GuildMember> | null;
@@ -1113,11 +1093,14 @@ declare module 'better-discord.js' {
     public readonly client: Client;
     public everyone: boolean;
     public readonly guild: Guild;
-    public has(data: User | GuildMember | Role | GuildChannel, options?: {
-      ignoreDirect?: boolean;
-      ignoreRoles?: boolean;
-      ignoreEveryone?: boolean;
-    }): boolean;
+    public has(
+      data: User | GuildMember | Role | GuildChannel,
+      options?: {
+        ignoreDirect?: boolean;
+        ignoreRoles?: boolean;
+        ignoreEveryone?: boolean;
+      },
+    ): boolean;
     public readonly members: Collection<Snowflake, GuildMember> | null;
     public roles: Collection<Snowflake, Role>;
     public users: Collection<Snowflake, User>;
@@ -1139,10 +1122,31 @@ declare module 'better-discord.js' {
     public me: boolean;
     public message: Message;
     public readonly partial: boolean;
-    public users: ReactionUserStore;
+    public users: ReactionUserManager;
     public remove(): Promise<MessageReaction>;
     public fetch(): Promise<MessageReaction>;
     public toJSON(): object;
+  }
+
+  export class NewsChannel extends TextBasedChannel(GuildChannel) {
+    constructor(guild: Guild, data?: object);
+    public messages: MessageManager;
+    public nsfw: boolean;
+    public topic: string | null;
+    public type: 'news';
+    public createWebhook(
+      name: string,
+      options?: { avatar?: BufferResolvable | Base64Resolvable; reason?: string },
+    ): Promise<Webhook>;
+    public setNSFW(nsfw: boolean, reason?: string): Promise<NewsChannel>;
+    public fetchWebhooks(): Promise<Collection<Snowflake, Webhook>>;
+  }
+
+  export class PartialGroupDMChannel extends Channel {
+    constructor(client: Client, data: object);
+    public name: string;
+    public icon: string | null;
+    public iconURL(options?: ImageURLOptions): string | null;
   }
 
   export class PermissionOverwrites {
@@ -1155,7 +1159,10 @@ declare module 'better-discord.js' {
     public update(options: PermissionOverwriteOption, reason?: string): Promise<PermissionOverwrites>;
     public delete(reason?: string): Promise<PermissionOverwrites>;
     public toJSON(): object;
-    public static resolveOverwriteOptions(options: ResolvedOverwriteOptions, initialPermissions: { allow?: PermissionResolvable, deny?: PermissionResolvable }): ResolvedOverwriteOptions;
+    public static resolveOverwriteOptions(
+      options: ResolvedOverwriteOptions,
+      initialPermissions: { allow?: PermissionResolvable; deny?: PermissionResolvable },
+    ): ResolvedOverwriteOptions;
     public static resolve(overwrite: OverwriteResolvable, guild: Guild): RawOverwriteData;
   }
 
@@ -1202,17 +1209,22 @@ declare module 'better-discord.js' {
     public empty(): void;
     public endReason(): string | null;
 
-    public on(event: 'collect', listener: (reaction: MessageReaction, user: User) => void): this;
-    public on(event: 'dispose', listener: (reaction: MessageReaction, user: User) => void): this;
-    public on(event: 'end', listener: (collected: Collection<Snowflake, MessageReaction>, reason: string) => void): this;
-    public on(event: 'remove', listener: (reaction: MessageReaction, user: User) => void): this;
-    public on(event: string, listener: Function): this;
+    public on(event: 'collect' | 'dispose' | 'remove', listener: (reaction: MessageReaction, user: User) => void): this;
+    public on(
+      event: 'end',
+      listener: (collected: Collection<Snowflake, MessageReaction>, reason: string) => void,
+    ): this;
+    public on(event: string, listener: (...args: any[]) => void): this;
 
-    public once(event: 'collect', listener: (reaction: MessageReaction, user: User) => void): this;
-    public once(event: 'dispose', listener: (reaction: MessageReaction, user: User) => void): this;
-    public once(event: 'end', listener: (collected: Collection<Snowflake, MessageReaction>, reason: string) => void): this;
-    public once(event: 'remove', listener: (reaction: MessageReaction, user: User) => void): this;
-    public once(event: string, listener: Function): this;
+    public once(
+      event: 'collect' | 'dispose' | 'remove',
+      listener: (reaction: MessageReaction, user: User) => void,
+    ): this;
+    public once(
+      event: 'end',
+      listener: (collected: Collection<Snowflake, MessageReaction>, reason: string) => void,
+    ): this;
+    public once(event: string, listener: (...args: any[]) => void): this;
   }
 
   export class ReactionEmoji extends Emoji {
@@ -1269,7 +1281,7 @@ declare module 'better-discord.js' {
   export class Shard extends EventEmitter {
     constructor(manager: ShardingManager, id: number);
     private _evals: Map<string, Promise<any>>;
-    private _exitListener: Function;
+    private _exitListener: (...args: any[]) => void;
     private _fetches: Map<string, Promise<any>>;
     private _handleExit(respawn?: boolean): void;
     private _handleMessage(message: any): void;
@@ -1290,19 +1302,17 @@ declare module 'better-discord.js' {
     public send(message: any): Promise<Shard>;
     public spawn(spawnTimeout?: number): Promise<ChildProcess>;
 
-    public on(event: 'death', listener: (child: ChildProcess) => void): this;
+    public on(event: 'spawn' | 'death', listener: (child: ChildProcess) => void): this;
     public on(event: 'disconnect' | 'ready' | 'reconnecting', listener: () => void): this;
     public on(event: 'error', listener: (error: Error) => void): this;
     public on(event: 'message', listener: (message: any) => void): this;
-    public on(event: 'spawn', listener: (child: ChildProcess) => void): this;
-    public on(event: string, listener: Function): this;
+    public on(event: string, listener: (...args: any[]) => void): this;
 
-    public once(event: 'death', listener: (child: ChildProcess) => void): this;
+    public once(event: 'spawn' | 'death', listener: (child: ChildProcess) => void): this;
     public once(event: 'disconnect' | 'ready' | 'reconnecting', listener: () => void): this;
     public once(event: 'error', listener: (error: Error) => void): this;
     public once(event: 'message', listener: (message: any) => void): this;
-    public once(event: 'spawn', listener: (child: ChildProcess) => void): this;
-    public once(event: string, listener: Function): this;
+    public once(event: string, listener: (...args: any[]) => void): this;
   }
 
   export class ShardClientUtil {
@@ -1325,15 +1335,18 @@ declare module 'better-discord.js' {
   }
 
   export class ShardingManager extends EventEmitter {
-    constructor(file: string, options?: {
-      totalShards?: number | 'auto';
-      shardList?: number[] | 'auto';
-      mode?: ShardingManagerMode;
-      respawn?: boolean;
-      shardArgs?: string[];
-      token?: string;
-      execArgv?: string[];
-    });
+    constructor(
+      file: string,
+      options?: {
+        totalShards?: number | 'auto';
+        shardList?: number[] | 'auto';
+        mode?: ShardingManagerMode;
+        respawn?: boolean;
+        shardArgs?: string[];
+        token?: string;
+        execArgv?: string[];
+      },
+    );
 
     public file: string;
     public respawn: boolean;
@@ -1345,7 +1358,11 @@ declare module 'better-discord.js' {
     public broadcastEval(script: string): Promise<any[]>;
     public createShard(id: number): Shard;
     public fetchClientValues(prop: string): Promise<any[]>;
-    public respawnAll(shardDelay?: number, respawnDelay?: number, spawnTimeout?: number): Promise<Collection<number, Shard>>;
+    public respawnAll(
+      shardDelay?: number,
+      respawnDelay?: number,
+      spawnTimeout?: number,
+    ): Promise<Collection<number, Shard>>;
     public spawn(amount?: number | 'auto', delay?: number, spawnTimeout?: number): Promise<Collection<number, Shard>>;
 
     public on(event: 'shardCreate', listener: (shard: Shard) => void): this;
@@ -1358,7 +1375,16 @@ declare module 'better-discord.js' {
     public static generate(timestamp?: number | Date): Snowflake;
   }
 
-  const VolumeMixin: <T>(base: Constructable<T>) => Constructable<T & VolumeInterface>;
+  export class Speaking extends BitField<SpeakingString> {
+    public static FLAGS: Record<SpeakingString, number>;
+    public static resolve(bit?: BitFieldResolvable<SpeakingString>): number;
+  }
+
+  export class StoreChannel extends GuildChannel {
+    constructor(guild: Guild, data?: object);
+    public nsfw: boolean;
+    public type: 'store';
+  }
 
   class StreamDispatcher extends VolumeMixin(Writable) {
     constructor(player: object, options?: StreamOptions, streams?: object);
@@ -1376,44 +1402,34 @@ declare module 'better-discord.js' {
     public setFEC(enabled: boolean): boolean;
     public pause(silence?: boolean): void;
     public resume(): void;
-
-    public on(event: 'close', listener: () => void): this;
+    public on(event: 'close' | 'drain' | 'finish' | 'start', listener: () => void): this;
     public on(event: 'debug', listener: (info: string) => void): this;
-    public on(event: 'drain', listener: () => void): this;
-    public on(event: 'end', listener: () => void): this;
     public on(event: 'error', listener: (err: Error) => void): this;
-    public on(event: 'finish', listener: () => void): this;
-    public on(event: 'pipe', listener: (src: Readable) => void): this;
-    public on(event: 'start', listener: () => void): this;
+    public on(event: 'pipe' | 'unpipe', listener: (src: Readable) => void): this;
     public on(event: 'speaking', listener: (speaking: boolean) => void): this;
-    public on(event: 'unpipe', listener: (src: Readable) => void): this;
     public on(event: 'volumeChange', listener: (oldVolume: number, newVolume: number) => void): this;
-    public on(event: string, listener: Function): this;
+    public on(event: string, listener: (...args: any[]) => void): this;
 
-    public once(event: 'close', listener: () => void): this;
+    public once(event: 'close' | 'drain' | 'finish' | 'start', listener: () => void): this;
     public once(event: 'debug', listener: (info: string) => void): this;
-    public once(event: 'drain', listener: () => void): this;
-    public once(event: 'end', listener: () => void): this;
     public once(event: 'error', listener: (err: Error) => void): this;
-    public once(event: 'finish', listener: () => void): this;
-    public once(event: 'pipe', listener: (src: Readable) => void): this;
-    public once(event: 'start', listener: () => void): this;
+    public once(event: 'pipe' | 'unpipe', listener: (src: Readable) => void): this;
     public once(event: 'speaking', listener: (speaking: boolean) => void): this;
-    public once(event: 'unpipe', listener: (src: Readable) => void): this;
-    public on(event: 'volumeChange', listener: (oldVolume: number, newVolume: number) => void): this;
-    public once(event: string, listener: Function): this;
-  }
-
-  export class Speaking extends BitField<SpeakingString> {
-    public static FLAGS: Record<SpeakingString, number>;
-    public static resolve(bit?: BitFieldResolvable<SpeakingString>): number;
+    public once(event: 'volumeChange', listener: (oldVolume: number, newVolume: number) => void): this;
+    public once(event: string, listener: (...args: any[]) => void): this;
   }
 
   export class Structures {
-    static get<K extends keyof Extendable>(structure: K): Extendable[K];
-    static get(structure: string): Function;
-    static extend<K extends keyof Extendable, T extends Extendable[K]>(structure: K, extender: (baseClass: Extendable[K]) => T): T;
-    static extend<T extends Function>(structure: string, extender: (baseClass: typeof Function) => T): T;
+    public static get<K extends keyof Extendable>(structure: K): Extendable[K];
+    public static get(structure: string): (...args: any[]) => void;
+    public static extend<K extends keyof Extendable, T extends Extendable[K]>(
+      structure: K,
+      extender: (baseClass: Extendable[K]) => T,
+    ): T;
+    public static extend<T extends (...args: any[]) => void>(
+      structure: string,
+      extender: (baseClass: typeof Function) => T,
+    ): T;
   }
 
   export class SystemChannelFlags extends BitField<SystemChannelFlagsString> {
@@ -1421,31 +1437,48 @@ declare module 'better-discord.js' {
     public static resolve(bit?: BitFieldResolvable<SystemChannelFlagsString>): number;
   }
 
+  export class Team extends Base {
+    constructor(client: Client, data: object);
+    public id: Snowflake;
+    public name: string;
+    public icon: string | null;
+    public ownerID: Snowflake | null;
+    public members: Collection<Snowflake, TeamMember>;
+
+    public readonly owner: TeamMember;
+    public readonly createdAt: Date;
+    public readonly createdTimestamp: number;
+
+    public iconURL(options?: ImageURLOptions): string;
+    public toJSON(): object;
+    public toString(): string;
+  }
+
+  export class TeamMember extends Base {
+    constructor(team: Team, data: object);
+    public team: Team;
+    public readonly id: Snowflake;
+    public permissions: string[];
+    public membershipState: MembershipStates;
+    public user: User;
+
+    public toString(): string;
+  }
+
   export class TextChannel extends TextBasedChannel(GuildChannel) {
     constructor(guild: Guild, data?: object);
-    public messages: MessageStore;
+    public messages: MessageManager;
     public nsfw: boolean;
+    public type: 'text';
     public rateLimitPerUser: number;
     public topic: string | null;
-    public createWebhook(name: string, options?: { avatar?: BufferResolvable | Base64Resolvable, reason?: string }): Promise<Webhook>;
+    public createWebhook(
+      name: string,
+      options?: { avatar?: BufferResolvable | Base64Resolvable; reason?: string },
+    ): Promise<Webhook>;
     public setNSFW(nsfw: boolean, reason?: string): Promise<TextChannel>;
     public setRateLimitPerUser(rateLimitPerUser: number, reason?: string): Promise<TextChannel>;
     public fetchWebhooks(): Promise<Collection<Snowflake, Webhook>>;
-  }
-
-  export class NewsChannel extends TextBasedChannel(GuildChannel) {
-    constructor(guild: Guild, data?: object);
-    public messages: MessageStore;
-    public nsfw: boolean;
-    public topic: string | null;
-    public createWebhook(name: string, options?: { avatar?: BufferResolvable | Base64Resolvable, reason?: string }): Promise<Webhook>;
-    public setNSFW(nsfw: boolean, reason?: string): Promise<NewsChannel>;
-    public fetchWebhooks(): Promise<Collection<Snowflake, Webhook>>;
-  }
-
-  export class Relationship extends Base {
-    public user: User;
-    public type: keyof typeof RelationshipType;
   }
 
   export class User extends PartialTextBasedChannel(Base) {
@@ -1458,6 +1491,7 @@ declare module 'better-discord.js' {
     public readonly defaultAvatarURL: string;
     public readonly dmChannel: DMChannel;
     public id: Snowflake;
+    public lastMessageID: Snowflake | null;
     public locale: string;
     public readonly partial: false;
     public readonly presence: Presence;
@@ -1480,11 +1514,14 @@ declare module 'better-discord.js' {
     public static basename(path: string, ext?: string): string;
     public static binaryToID(num: string): Snowflake;
     public static cleanContent(str: string, message: Message): string;
+    public static removeMentions(str: string): string;
     public static cloneObject(obj: object): object;
     public static convertToBuffer(ab: ArrayBuffer | string): Buffer;
     public static delayFor(ms: number): Promise<void>;
-    public static discordSort<K, V extends { rawPosition: number; id: string; }>(collection: Collection<K, V>): Collection<K, V>;
-    public static escapeMarkdown(text: string, options?: { codeBlock?: boolean, inlineCode?: boolean, bold?: boolean, italic?: boolean, underline?: boolean, strikethrough?: boolean, spoiler?: boolean, inlineCodeContent?: boolean, codeBlockContent?: boolean }): string;
+    public static discordSort<K, V extends { rawPosition: number; id: string }>(
+      collection: Collection<K, V>,
+    ): Collection<K, V>;
+    public static escapeMarkdown(text: string, options?: EscapeMarkdownOptions): string;
     public static escapeCodeBlock(text: string): string;
     public static escapeInlineCode(text: string): string;
     public static escapeBold(text: string): string;
@@ -1496,20 +1533,20 @@ declare module 'better-discord.js' {
     public static fetchRecommendedShards(token: string, guildsPerShard?: number): Promise<number>;
     public static flatten(obj: object, ...props: { [key: string]: boolean | string }[]): object;
     public static idToBinary(num: Snowflake): string;
-    public static makeError(obj: { name: string, message: string, stack: string }): Error;
-    public static makePlainError(err: Error): { name: string, message: string, stack: string };
+    public static makeError(obj: { name: string; message: string; stack: string }): Error;
+    public static makePlainError(err: Error): { name: string; message: string; stack: string };
     public static mergeDefault(def: object, given: object): object;
     public static moveElementInArray(array: any[], element: any, newIndex: number, offset?: boolean): number;
-    public static parseEmoji(text: string): { animated: boolean; name: string; id: string | null; } | null;
+    public static parseEmoji(text: string): { animated: boolean; name: string; id: string | null } | null;
     public static resolveColor(color: ColorResolvable): number;
     public static resolveString(data: StringResolvable): string;
-    public static setPosition<T extends (Channel | Role)>(
+    public static setPosition<T extends Channel | Role>(
       item: T,
       position: number,
       relative: boolean,
       sorted: Collection<Snowflake, T>,
       route: object,
-      reason?: string
+      reason?: string,
     ): Promise<{ id: Snowflake; position: number }[]>;
     public static splitMessage(text: StringResolvable, options?: SplitOptions): string[];
     public static str2ab(str: string): ArrayBuffer;
@@ -1524,17 +1561,15 @@ declare module 'better-discord.js' {
 
     public on(event: 'end', listener: () => void): this;
     public on(event: 'error', listener: (error: Error) => void): this;
-    public on(event: 'subscribe', listener: (dispatcher: StreamDispatcher) => void): this;
-    public on(event: 'unsubscribe', listener: (dispatcher: StreamDispatcher) => void): this;
+    public on(event: 'subscribe' | 'unsubscribe', listener: (dispatcher: StreamDispatcher) => void): this;
     public on(event: 'warn', listener: (warning: string | Error) => void): this;
-    public on(event: string, listener: Function): this;
+    public on(event: string, listener: (...args: any[]) => void): this;
 
     public once(event: 'end', listener: () => void): this;
     public once(event: 'error', listener: (error: Error) => void): this;
-    public once(event: 'subscribe', listener: (dispatcher: StreamDispatcher) => void): this;
-    public once(event: 'unsubscribe', listener: (dispatcher: StreamDispatcher) => void): this;
+    public once(event: 'subscribe' | 'unsubscribe', listener: (dispatcher: StreamDispatcher) => void): this;
     public once(event: 'warn', listener: (warning: string | Error) => void): this;
-    public once(event: string, listener: Function): this;
+    public once(event: string, listener: (...args: any[]) => void): this;
   }
 
   export class VoiceChannel extends GuildChannel {
@@ -1544,6 +1579,7 @@ declare module 'better-discord.js' {
     public readonly full: boolean;
     public readonly joinable: boolean;
     public readonly speakable: boolean;
+    public type: 'voice';
     public userLimit: number;
     public join(): Promise<VoiceConnection>;
     public leave(): void;
@@ -1585,42 +1621,36 @@ declare module 'better-discord.js' {
     public disconnect(): void;
     public play(input: VoiceBroadcast | Readable | string, options?: StreamOptions): StreamDispatcher;
 
-    public on(event: 'authenticated', listener: () => void): this;
-    public on(event: 'closing', listener: () => void): this;
+    public on(event: 'authenticated' | 'closing' | 'newSession' | 'ready' | 'reconnecting', listener: () => void): this;
     public on(event: 'debug', listener: (message: string) => void): this;
-    public on(event: 'disconnect', listener: (error: Error) => void): this;
-    public on(event: 'error', listener: (error: Error) => void): this;
-    public on(event: 'failed', listener: (error: Error) => void): this;
-    public on(event: 'newSession', listener: () => void): this;
-    public on(event: 'ready', listener: () => void): this;
-    public on(event: 'reconnecting', listener: () => void): this;
+    public on(event: 'error' | 'failed' | 'disconnect', listener: (error: Error) => void): this;
     public on(event: 'speaking', listener: (user: User, speaking: Readonly<Speaking>) => void): this;
     public on(event: 'warn', listener: (warning: string | Error) => void): this;
-    public on(event: string, listener: Function): this;
+    public on(event: string, listener: (...args: any[]) => void): this;
 
-    public once(event: 'authenticated', listener: () => void): this;
-    public once(event: 'closing', listener: () => void): this;
+    public once(
+      event: 'authenticated' | 'closing' | 'newSession' | 'ready' | 'reconnecting',
+      listener: () => void,
+    ): this;
     public once(event: 'debug', listener: (message: string) => void): this;
-    public once(event: 'disconnect', listener: (error: Error) => void): this;
-    public once(event: 'error', listener: (error: Error) => void): this;
-    public once(event: 'failed', listener: (error: Error) => void): this;
-    public once(event: 'newSession', listener: () => void): this;
-    public once(event: 'ready', listener: () => void): this;
-    public once(event: 'reconnecting', listener: () => void): this;
+    public once(event: 'error' | 'failed' | 'disconnect', listener: (error: Error) => void): this;
     public once(event: 'speaking', listener: (user: User, speaking: Readonly<Speaking>) => void): this;
     public once(event: 'warn', listener: (warning: string | Error) => void): this;
-    public once(event: string, listener: Function): this;
+    public once(event: string, listener: (...args: any[]) => void): this;
   }
 
   class VoiceReceiver extends EventEmitter {
     constructor(connection: VoiceConnection);
-    public createStream(user: UserResolvable, options?: { mode?: 'opus' | 'pcm', end?: 'silence' | 'manual' }): Readable;
+    public createStream(
+      user: UserResolvable,
+      options?: { mode?: 'opus' | 'pcm'; end?: 'silence' | 'manual' },
+    ): Readable;
 
     public on(event: 'debug', listener: (error: Error | string) => void): this;
-    public on(event: string, listener: Function): this;
+    public on(event: string, listener: (...args: any[]) => void): this;
 
     public once(event: 'debug', listener: (error: Error | string) => void): this;
-    public once(event: string, listener: Function): this;
+    public once(event: string, listener: (...args: any[]) => void): this;
   }
 
   export class VoiceRegion {
@@ -1661,7 +1691,7 @@ declare module 'better-discord.js' {
   }
 
   class VolumeInterface extends EventEmitter {
-    constructor(options?: { volume?: number })
+    constructor(options?: { volume?: number });
     public readonly volume: number;
     public readonly volumeDecibels: number;
     public readonly volumeEditable: boolean;
@@ -1680,6 +1710,7 @@ declare module 'better-discord.js' {
     public avatar: string;
     public avatarURL(options?: ImageURLOptions): string | null;
     public channelID: Snowflake;
+    public client: Client;
     public guildID: Snowflake;
     public name: string;
     public owner: User | object | null;
@@ -1689,6 +1720,7 @@ declare module 'better-discord.js' {
 
   export class WebhookClient extends WebhookMixin(BaseClient) {
     constructor(id: string, token: string, options?: ClientOptions);
+    public client: this;
     public token: string;
   }
 
@@ -1699,7 +1731,7 @@ declare module 'better-discord.js' {
     private packetQueue: object[];
     private destroyed: boolean;
     private reconnecting: boolean;
-    private sessionStartLimit?: { total: number; remaining: number; reset_after: number; };
+    private sessionStartLimit?: { total: number; remaining: number; reset_after: number };
 
     public readonly client: Client;
     public gateway?: string;
@@ -1729,7 +1761,7 @@ declare module 'better-discord.js' {
     private sessionID?: string;
     private lastPingTimestamp: number;
     private lastHeartbeatAcked: boolean;
-    private ratelimit: { queue: object[]; total: number; remaining: number; time: 60e3; timer: NodeJS.Timeout | null; };
+    private ratelimit: { queue: object[]; total: number; remaining: number; time: 60e3; timer: NodeJS.Timeout | null };
     private connection: WebSocket | null;
     private helloTimeout: NodeJS.Timeout | undefined;
     private eventsAttached: boolean;
@@ -1758,252 +1790,287 @@ declare module 'better-discord.js' {
     private identifyResume(): void;
     private _send(data: object): void;
     private processQueue(): void;
-    private destroy(closeCode: number): void;
+    private destroy(destroyOptions?: { closeCode?: number; reset?: boolean; emit?: boolean; log?: boolean }): void;
     private _cleanupConnection(): void;
+    private _emitDestroyed(): void;
 
     public send(data: object): void;
-    public on(event: 'ready', listener: () => void): this;
-    public on(event: 'resumed', listener: () => void): this;
+    public on(event: 'ready' | 'resumed' | 'invalidSession', listener: () => void): this;
     public on(event: 'close', listener: (event: CloseEvent) => void): this;
-    public on(event: 'invalidSession', listener: () => void): this;
     public on(event: 'allReady', listener: (unavailableGuilds?: Set<Snowflake>) => void): this;
-    public on(event: string, listener: Function): this;
+    public on(event: string, listener: (...args: any[]) => void): this;
 
-    public once(event: 'ready', listener: () => void): this;
-    public once(event: 'resumed', listener: () => void): this;
+    public once(event: 'ready' | 'resumed' | 'invalidSession', listener: () => void): this;
     public once(event: 'close', listener: (event: CloseEvent) => void): this;
-    public once(event: 'invalidSession', listener: () => void): this;
     public once(event: 'allReady', listener: (unavailableGuilds?: Set<Snowflake>) => void): this;
-    public once(event: string, listener: Function): this;
+    public once(event: string, listener: (...args: any[]) => void): this;
   }
 
-//#endregion
+  //#endregion
 
-//#region Stores
+  //#region Collections
 
-  export class ChannelStore extends DataStore<Snowflake, Channel, typeof Channel, ChannelResolvable> {
-    constructor(client: Client, iterable: Iterable<any>, options?: { lru: boolean });
-    constructor(client: Client, options?: { lru: boolean });
+  export class Collection<K, V> extends BaseCollection<K, V> {
+    public flatMap<T>(
+      fn: (value: V, key: K, collection: this) => Collection<K, T>,
+      thisArg?: unknown,
+    ): Collection<K, T>;
+    public flatMap<T, This>(
+      fn: (this: This, value: V, key: K, collection: this) => Collection<K, T>,
+      thisArg: This,
+    ): Collection<K, T>;
+    public mapValues<T>(fn: (value: V, key: K, collection: this) => T, thisArg?: unknown): Collection<K, T>;
+    public mapValues<This, T>(
+      fn: (this: This, value: V, key: K, collection: this) => T,
+      thisArg: This,
+    ): Collection<K, T>;
+    public toJSON(): object;
+  }
+
+  //#endregion
+
+  //#region Managers
+
+  export class ChannelManager extends BaseManager<Snowflake, Channel, ChannelResolvable> {
+    constructor(client: Client, iterable: Iterable<any>);
     public fetch(id: Snowflake, cache?: boolean): Promise<Channel>;
   }
 
-  export class DataStore<K, V, VConstructor = Constructable<V>, R = any> extends Collection<K, V> {
-    constructor(client: Client, iterable: Iterable<any>, holds: VConstructor);
-    public client: Client;
-    public holds: VConstructor;
-    public add(data: any, cache?: boolean, { id, extras }?: { id: K, extras: any[] }): V;
+  export abstract class BaseManager<K, Holds, R> {
+    constructor(client: Client, iterable: Iterable<any>, holds: Constructable<Holds>, cacheType: Collection<K, Holds>);
+    public holds: Constructable<Holds>;
+    public cache: Collection<K, Holds>;
+    public cacheType: Collection<K, Holds>;
+    public readonly client: Client;
+    public add(data: any, cache?: boolean, { id, extras }?: { id: K; extras: any[] }): Holds;
     public remove(key: K): void;
-    public resolve(resolvable: R): V | null;
+    public resolve(resolvable: R): Holds | null;
     public resolveID(resolvable: R): K | null;
-    // Don't worry about those bunch of ts-ignores here, this is intended https://github.com/microsoft/TypeScript/issues/1213
-    // @ts-ignore
-    public filter(fn: (value: V, key: K, collection: this) => boolean): Collection<K, V>;
-    // @ts-ignore
-    public filter<T>(fn: (this: T, value: V, key: K, collection: this) => boolean, thisArg: T): Collection<K, V>;
-    // @ts-ignore
-    public filter(fn: (value: V, key: K, collection: this) => boolean, thisArg?: unknown): Collection<K, V>;
-    // @ts-ignore
-    public partition(fn: (value: V, key: K, collection: this) => boolean): [Collection<K, V>, Collection<K, V>];
-    // @ts-ignore
-    public partition<T>(fn: (this: T, value: V, key: K, collection: this) => boolean, thisArg: T): [Collection<K, V>, Collection<K, V>];
-    // @ts-ignore
-    public partition(fn: (value: V, key: K, collection: this) => boolean, thisArg?: unknown): [Collection<K, V>, Collection<K, V>];
-    public flatMap<T>(fn: (value: V, key: K, collection: this) => Collection<K, T>): Collection<K, T>;
-    public flatMap<T, This>(fn: (this: This, value: V, key: K, collection: this) => Collection<K, T>, thisArg: This): Collection<K, T>;
-    public flatMap<T>(fn: (value: V, key: K, collection: this) => Collection<K, T>, thisArg?: unknown): Collection<K, T>;
-    public mapValues<T>(fn: (value: V, key: K, collection: this) => T): Collection<K, T>;
-    public mapValues<This, T>(fn: (this: This, value: V, key: K, collection: this) => T, thisArg: This): Collection<K, T>;
-    public mapValues<T>(fn: (value: V, key: K, collection: this) => T, thisArg?: unknown): Collection<K, T>;
-    // @ts-ignore
-    public clone(): Collection<K, V>;
-    // @ts-ignore
-    public concat(...collections: Collection<K, V>[]): Collection<K, V>;
-    // @ts-ignore
-    public sorted(compareFunction: (firstValue: V, secondValue: V, firstKey: K, secondKey: K) => number): Collection<K, V>;
   }
 
-  export class GuildEmojiRoleStore extends OverridableDataStore<Snowflake, Role, typeof Role, RoleResolvable> {
+  export class GuildChannelManager extends BaseManager<Snowflake, GuildChannel, GuildChannelResolvable> {
+    constructor(guild: Guild, iterable?: Iterable<any>);
+    public guild: Guild;
+    public create(name: string, options: GuildCreateChannelOptions & { type: 'voice' }): Promise<VoiceChannel>;
+    public create(name: string, options: GuildCreateChannelOptions & { type: 'category' }): Promise<CategoryChannel>;
+    public create(name: string, options?: GuildCreateChannelOptions & { type?: 'text' }): Promise<TextChannel>;
+    public create(
+      name: string,
+      options: GuildCreateChannelOptions,
+    ): Promise<TextChannel | VoiceChannel | CategoryChannel>;
+  }
+
+  export class GuildEmojiManager extends BaseManager<Snowflake, GuildEmoji, EmojiResolvable> {
+    constructor(guild: Guild, iterable?: Iterable<any>);
+    public guild: Guild;
+    public create(
+      attachment: BufferResolvable | Base64Resolvable,
+      name: string,
+      options?: GuildEmojiCreateOptions,
+    ): Promise<GuildEmoji>;
+    public resolveIdentifier(emoji: EmojiIdentifierResolvable): string | null;
+  }
+
+  export class GuildEmojiRoleManager {
     constructor(emoji: GuildEmoji);
+    public emoji: GuildEmoji;
+    public guild: Guild;
+    public cache: Collection<Snowflake, Role>;
     public add(roleOrRoles: RoleResolvable | RoleResolvable[] | Collection<Snowflake, Role>): Promise<GuildEmoji>;
     public set(roles: RoleResolvable[] | Collection<Snowflake, Role>): Promise<GuildEmoji>;
     public remove(roleOrRoles: RoleResolvable | RoleResolvable[] | Collection<Snowflake, Role>): Promise<GuildEmoji>;
   }
 
-  export class GuildEmojiStore extends DataStore<Snowflake, GuildEmoji, typeof GuildEmoji, EmojiResolvable> {
+  export class GuildManager extends BaseManager<Snowflake, Guild, GuildResolvable> {
+    constructor(client: Client, iterable?: Iterable<any>);
+    public create(
+      name: string,
+      options?: { region?: string; icon: BufferResolvable | Base64Resolvable | null },
+    ): Promise<Guild>;
+  }
+
+  export class GuildMemberManager extends BaseManager<Snowflake, GuildMember, GuildMemberResolvable> {
     constructor(guild: Guild, iterable?: Iterable<any>);
-    public create(attachment: BufferResolvable | Base64Resolvable, name: string, options?: GuildEmojiCreateOptions): Promise<GuildEmoji>;
-    public resolveIdentifier(emoji: EmojiIdentifierResolvable): string | null;
-  }
-
-  export class GuildChannelStore extends DataStore<Snowflake, GuildChannel, typeof GuildChannel, GuildChannelResolvable> {
-    constructor(guild: Guild, iterable?: Iterable<any>);
-    public create(name: string, options: GuildCreateChannelOptions & { type: 'voice' }): Promise<VoiceChannel>;
-    public create(name: string, options: GuildCreateChannelOptions & { type: 'category' }): Promise<CategoryChannel>;
-    public create(name: string, options?: GuildCreateChannelOptions & { type?: 'text' }): Promise<TextChannel>;
-    public create(name: string, options: GuildCreateChannelOptions): Promise<TextChannel | VoiceChannel | CategoryChannel>;
-  }
-
-  // Hacky workaround because changing the signature of an overridden method errors
-  class OverridableDataStore<V, K, VConstructor = Constructable<V>, R = any> extends DataStore<V, K, VConstructor, R> {
-    public add(data: any, cache: any): any;
-    public set(key: any): any;
-  }
-
-  export class GuildMemberRoleStore extends OverridableDataStore<Snowflake, Role, typeof Role, RoleResolvable> {
-    constructor(member: GuildMember);
-    public readonly hoist: Role | null;
-    public readonly color: Role | null;
-    public readonly highest: Role;
-
-    public add(roleOrRoles: RoleResolvable | RoleResolvable[] | Collection<Snowflake, Role>, reason?: string): Promise<GuildMember>;
-    public set(roles: RoleResolvable[] | Collection<Snowflake, Role>, reason?: string): Promise<GuildMember>;
-    public remove(roleOrRoles: RoleResolvable | RoleResolvable[] | Collection<Snowflake, Role>, reason?: string): Promise<GuildMember>;
-  }
-
-  export class GuildMemberStore extends DataStore<Snowflake, GuildMember, typeof GuildMember, GuildMemberResolvable> {
-    constructor(guild: Guild, iterable?: Iterable<any>);
+    public guild: Guild;
     public ban(user: UserResolvable, options?: BanOptions): Promise<GuildMember | User | Snowflake>;
-    public fetch(options: UserResolvable | FetchMemberOptions): Promise<GuildMember>;
-    public fetch(): Promise<GuildMemberStore>;
-    public fetch(options: FetchMembersOptions): Promise<Collection<Snowflake, GuildMember>>;
-    public prune(options: GuildPruneMembersOptions & { dry?: false, count: false }): Promise<null>;
+    public fetch(
+      options: UserResolvable | FetchMemberOptions | (FetchMembersOptions & { user: UserResolvable }),
+    ): Promise<GuildMember>;
+    public fetch(options?: FetchMembersOptions): Promise<Collection<Snowflake, GuildMember>>;
+    public prune(options: GuildPruneMembersOptions & { dry?: false; count: false }): Promise<null>;
     public prune(options?: GuildPruneMembersOptions): Promise<number>;
     public unban(user: UserResolvable, reason?: string): Promise<User>;
   }
 
-  export class GuildStore extends DataStore<Snowflake, Guild, typeof Guild, GuildResolvable> {
-    constructor(client: Client, iterable?: Iterable<any>);
-    public create(name: string, options?: { region?: string, icon: BufferResolvable | Base64Resolvable | null }): Promise<Guild>;
+  export class GuildMemberRoleManager extends OverridableManager<Snowflake, Role, RoleResolvable> {
+    constructor(member: GuildMember);
+    public readonly hoist: Role | null;
+    public readonly color: Role | null;
+    public readonly highest: Role;
+    public member: GuildMember;
+    public guild: Guild;
+
+    public add(
+      roleOrRoles: RoleResolvable | RoleResolvable[] | Collection<Snowflake, Role>,
+      reason?: string,
+    ): Promise<GuildMember>;
+    public set(roles: RoleResolvable[] | Collection<Snowflake, Role>, reason?: string): Promise<GuildMember>;
+    public remove(
+      roleOrRoles: RoleResolvable | RoleResolvable[] | Collection<Snowflake, Role>,
+      reason?: string,
+    ): Promise<GuildMember>;
   }
 
-  export class MessageStore extends DataStore<Snowflake, Message, typeof Message, MessageResolvable> {
-    constructor(channel: TextChannel | DMChannel | GroupDMChannel, iterable?: Iterable<any>);
+  export class MessageManager extends BaseManager<Snowflake, Message, MessageResolvable> {
+    constructor(channel: TextChannel | DMChannel, iterable?: Iterable<any>);
+    public channel: TextBasedChannelFields;
+    public cache: Collection<Snowflake, Message>;
     public fetch(message: Snowflake, cache?: boolean): Promise<Message>;
     public fetch(options?: ChannelLogsQueryOptions, cache?: boolean): Promise<Collection<Snowflake, Message>>;
     public fetchPinned(cache?: boolean): Promise<Collection<Snowflake, Message>>;
-    public remove(message: MessageResolvable, reason?: string): Promise<void>;
+    public delete(message: MessageResolvable, reason?: string): Promise<void>;
   }
 
-  export class PresenceStore extends DataStore<Snowflake, Presence, typeof Presence, PresenceResolvable> {
+  // Hacky workaround because changing the signature of an overridden method errors
+  class OverridableManager<V, K, R = any> extends BaseManager<V, K, R> {
+    public add(data: any, cache: any): any;
+    public set(key: any): any;
+  }
+
+  export class PresenceManager extends BaseManager<Snowflake, Presence, PresenceResolvable> {
     constructor(client: Client, iterable?: Iterable<any>);
   }
 
-  export class ReactionStore extends DataStore<Snowflake, MessageReaction, typeof MessageReaction, MessageReactionResolvable> {
+  export class ReactionManager extends BaseManager<Snowflake, MessageReaction, MessageReactionResolvable> {
     constructor(message: Message, iterable?: Iterable<any>);
+    public message: Message;
     public removeAll(): Promise<Message>;
   }
 
-  export class ReactionUserStore extends DataStore<Snowflake, User, typeof User, UserResolvable> {
+  export class ReactionUserManager extends BaseManager<Snowflake, User, UserResolvable> {
     constructor(client: Client, iterable: Iterable<any> | undefined, reaction: MessageReaction);
-    public fetch(options?: { limit?: number, after?: Snowflake, before?: Snowflake }): Promise<Collection<Snowflake, User>>;
+    public reaction: MessageReaction;
+    public fetch(options?: {
+      limit?: number;
+      after?: Snowflake;
+      before?: Snowflake;
+    }): Promise<Collection<Snowflake, User>>;
     public remove(user?: UserResolvable): Promise<MessageReaction>;
   }
 
-  export class RecipientStore extends DataStore<Snowflake, User, typeof User> { }
-
-  export class RelationshipStore extends DataStore<Snowflake, Relationship> {
-    public readonly blocked: UserStore;
-    public readonly friends: UserStore;
-    public readonly incoming: UserStore;
-    public readonly outgoing: UserStore;
-    public remove(user: UserResolvable): Promise<User | null>;
-    public request(type: keyof typeof RelationshipType, user: UserResolvable): Promise<User | null | string>;
-  }
-
-  export class RoleStore extends DataStore<Snowflake, Role, typeof Role, RoleResolvable> {
+  export class RoleManager extends BaseManager<Snowflake, Role, RoleResolvable> {
     constructor(guild: Guild, iterable?: Iterable<any>);
     public readonly everyone: Role | null;
     public readonly highest: Role;
+    public guild: Guild;
 
-    public create(options?: { data?: RoleData, reason?: string }): Promise<Role>;
+    public create(options?: { data?: RoleData; reason?: string }): Promise<Role>;
     public fetch(id: Snowflake, cache?: boolean): Promise<Role | null>;
     public fetch(id?: Snowflake, cache?: boolean): Promise<this>;
   }
 
-  export class UserStore extends DataStore<Snowflake, User, typeof User, UserResolvable> {
+  export class UserManager extends BaseManager<Snowflake, User, UserResolvable> {
     constructor(client: Client, iterable?: Iterable<any>);
     public fetch(id: Snowflake, cache?: boolean): Promise<User>;
   }
 
-  export class VoiceStateStore extends DataStore<Snowflake, VoiceState, typeof VoiceState> {
+  export class VoiceStateManager extends BaseManager<Snowflake, VoiceState, typeof VoiceState> {
     constructor(guild: Guild, iterable?: Iterable<any>);
+    public guild: Guild;
   }
 
-//#endregion
+  //#endregion
 
-//#region Mixins
+  //#region Mixins
 
   // Model the TextBasedChannel mixin system, allowing application of these fields
   // to the classes that use these methods without having to manually add them
   // to each of those classes
 
   type Constructable<T> = new (...args: any[]) => T;
-  const PartialTextBasedChannel: <T>(Base?: Constructable<T>) => Constructable<T & PartialTextBasedChannelFields>;
-  const TextBasedChannel: <T>(Base?: Constructable<T>) => Constructable<T & TextBasedChannelFields>;
+  function PartialTextBasedChannel<T>(Base?: Constructable<T>): Constructable<T & PartialTextBasedChannelFields>;
+  function TextBasedChannel<T>(Base?: Constructable<T>): Constructable<T & TextBasedChannelFields>;
 
   interface PartialTextBasedChannelFields {
     lastMessageID: Snowflake | null;
-    lastMessageChannelID: Snowflake | null;
     readonly lastMessage: Message | null;
-    lastPinTimestamp: number | null;
-    readonly lastPinAt: Date;
-    send(content?: StringResolvable, options?: MessageOptions | MessageAdditions): Promise<Message>;
-    send(content?: StringResolvable, options?: MessageOptions & { split?: false } | MessageAdditions): Promise<Message>;
-    send(content?: StringResolvable, options?: MessageOptions & { split: true | SplitOptions } | MessageAdditions): Promise<Message[]>;
-    send(options?: MessageOptions | MessageAdditions | APIMessage): Promise<Message>;
-    send(options?: MessageOptions & { split?: false } | MessageAdditions | APIMessage): Promise<Message>;
-    send(options?: MessageOptions & { split: true | SplitOptions } | MessageAdditions | APIMessage): Promise<Message[]>;
+    send(
+      options: MessageOptions | (MessageOptions & { split?: false }) | MessageAdditions | APIMessage,
+    ): Promise<Message>;
+    send(
+      options: (MessageOptions & { split: true | SplitOptions; content: StringResolvable }) | APIMessage,
+    ): Promise<Message[]>;
+    send(
+      content: StringResolvable,
+      options?: MessageOptions | (MessageOptions & { split?: false }) | MessageAdditions,
+    ): Promise<Message>;
+    send(content: StringResolvable, options?: MessageOptions & { split: true | SplitOptions }): Promise<Message[]>;
   }
 
   interface TextBasedChannelFields extends PartialTextBasedChannelFields {
+    _typing: Map<string, TypingData>;
+    lastPinTimestamp: number | null;
+    readonly lastPinAt: Date;
     typing: boolean;
     typingCount: number;
     awaitMessages(filter: CollectorFilter, options?: AwaitMessagesOptions): Promise<Collection<Snowflake, Message>>;
-    bulkDelete(messages: Collection<Snowflake, Message> | Message[] | Snowflake[] | number, filterOld?: boolean): Promise<Collection<Snowflake, Message>>;
+    bulkDelete(
+      messages: Collection<Snowflake, Message> | Message[] | Snowflake[] | number,
+      filterOld?: boolean,
+    ): Promise<Collection<Snowflake, Message>>;
     createMessageCollector(filter: CollectorFilter, options?: MessageCollectorOptions): MessageCollector;
     startTyping(count?: number): Promise<void>;
     stopTyping(force?: boolean): void;
   }
 
-  const WebhookMixin: <T>(Base?: Constructable<T>) => Constructable<T & WebhookFields>;
+  function WebhookMixin<T>(Base?: Constructable<T>): Constructable<T & WebhookFields>;
+
+  function VolumeMixin<T>(base: Constructable<T>): Constructable<T & VolumeInterface>;
 
   interface WebhookFields {
-    readonly client: Client;
     id: Snowflake;
     readonly createdAt: Date;
     readonly createdTimestamp: number;
     readonly url: string;
     delete(reason?: string): Promise<void>;
     edit(options: WebhookEditData): Promise<Webhook>;
-    send(content?: StringResolvable, options?: WebhookMessageOptions & { split?: false } | MessageAdditions): Promise<Message>;
-    send(content?: StringResolvable, options?: WebhookMessageOptions & { split: true | SplitOptions } | MessageAdditions): Promise<Message[]>;
-    send(options?: WebhookMessageOptions & { split?: false } | MessageAdditions | APIMessage): Promise<Message>;
-    send(options?: WebhookMessageOptions & { split: true | SplitOptions } | MessageAdditions | APIMessage): Promise<Message[]>;
+    send(
+      content?: StringResolvable,
+      options?: (WebhookMessageOptions & { split?: false }) | MessageAdditions,
+    ): Promise<Message>;
+    send(
+      content?: StringResolvable,
+      options?: (WebhookMessageOptions & { split: true | SplitOptions }) | MessageAdditions,
+    ): Promise<Message[]>;
+    send(options?: (WebhookMessageOptions & { split?: false }) | MessageAdditions | APIMessage): Promise<Message>;
+    send(
+      options?: (WebhookMessageOptions & { split: true | SplitOptions }) | MessageAdditions | APIMessage,
+    ): Promise<Message[]>;
     sendSlackMessage(body: object): Promise<boolean>;
   }
 
-//#endregion
+  //#endregion
 
-//#region Typedefs
+  //#region Typedefs
 
-  type ActivityFlagsString = 'INSTANCE'
-    | 'JOIN'
-    | 'SPECTATE'
-    | 'JOIN_REQUEST'
-    | 'SYNC'
-    | 'PLAY';
+  type ActivityFlagsString = 'INSTANCE' | 'JOIN' | 'SPECTATE' | 'JOIN_REQUEST' | 'SYNC' | 'PLAY';
 
-  type ActivityType = 'PLAYING'
-    | 'STREAMING'
-    | 'LISTENING'
-    | 'WATCHING'
-    | 'CUSTOM_STATUS';
+  interface ActivityOptions {
+    name?: string;
+    url?: string;
+    type?: ActivityType | number;
+    shardID?: number | number[];
+  }
 
-  type MessageFlagsString = 'CROSSPOSTED'
-    | 'IS_CROSSPOST'
-    | 'SUPPRESS_EMBEDS'
-    | 'SOURCE_MESSAGE_DELETED'
-    | 'URGENT';
+  type ActivityType = 'PLAYING' | 'STREAMING' | 'LISTENING' | 'WATCHING' | 'CUSTOM_STATUS';
+
+  interface AddGuildMemberOptions {
+    accessToken: string;
+    nick?: string;
+    roles?: Collection<Snowflake, Role> | RoleResolvable[];
+    mute?: boolean;
+    deaf?: boolean;
+  }
 
   interface APIErrror {
     UNKNOWN_ACCOUNT: number;
@@ -2052,23 +2119,10 @@ declare module 'better-discord.js' {
     REACTION_BLOCKED: number;
   }
 
-  interface AddGuildMemberOptions {
-    accessToken: String;
-    nick?: string;
-    roles?: Collection<Snowflake, Role> | RoleResolvable[];
-    mute?: boolean;
-    deaf?: boolean;
-  }
-
   interface AuditLogChange {
     key: string;
     old?: any;
     new?: any;
-  }
-
-  interface ImageURLOptions {
-    format?: ImageExt;
-    size?: ImageSize;
   }
 
   interface AwaitMessagesOptions extends MessageCollectorOptions {
@@ -2088,7 +2142,11 @@ declare module 'better-discord.js' {
 
   type Base64String = string;
 
-  type BitFieldResolvable<T extends string> = RecursiveArray<T | number | Readonly<BitField<T>>> | T | number | Readonly<BitField<T>>;
+  type BitFieldResolvable<T extends string> =
+    | RecursiveArray<T | number | Readonly<BitField<T>>>
+    | T
+    | number
+    | Readonly<BitField<T>>;
 
   type BufferResolvable = Buffer | string;
 
@@ -2131,6 +2189,59 @@ declare module 'better-discord.js' {
     type: 'BIG' | 'SMALL';
   }
 
+  interface ClientEvents {
+    channelCreate: [Channel];
+    channelDelete: [Channel | PartialDMChannel];
+    channelPinsUpdate: [Channel | PartialDMChannel, Date];
+    channelUpdate: [Channel, Channel];
+    debug: [string];
+    warn: [string];
+    disconnect: [any, number];
+    emojiCreate: [GuildEmoji];
+    emojiDelete: [GuildEmoji];
+    emojiUpdate: [GuildEmoji, GuildEmoji];
+    error: [Error];
+    guildBanAdd: [Guild, User | PartialUser];
+    guildBanRemove: [Guild, User | PartialUser];
+    guildCreate: [Guild];
+    guildDelete: [Guild];
+    guildUnavailable: [Guild];
+    guildIntegrationsUpdate: [Guild];
+    guildMemberAdd: [GuildMember | PartialGuildMember];
+    guildMemberAvailable: [GuildMember | PartialGuildMember];
+    guildMemberRemove: [GuildMember | PartialGuildMember];
+    guildMembersChunk: [Collection<Snowflake, GuildMember | PartialGuildMember>, Guild];
+    guildMemberSpeaking: [GuildMember | PartialGuildMember, Readonly<Speaking>];
+    guildMemberUpdate: [GuildMember | PartialGuildMember, GuildMember | PartialGuildMember];
+    guildUpdate: [Guild, Guild];
+    inviteCreate: [Invite];
+    inviteDelete: [Invite];
+    message: [Message];
+    messageDelete: [Message | PartialMessage];
+    messageReactionRemoveAll: [Message | PartialMessage];
+    messageReactionRemoveEmoji: [MessageReaction];
+    messageDeleteBulk: [Collection<Snowflake, Message | PartialMessage>];
+    messageReactionAdd: [MessageReaction, User | PartialUser];
+    messageReactionRemove: [MessageReaction, User | PartialUser];
+    messageUpdate: [Message | PartialMessage, Message | PartialMessage];
+    presenceUpdate: [Presence | undefined, Presence];
+    rateLimit: [RateLimitData];
+    ready: [];
+    invalidated: [];
+    roleCreate: [Role];
+    roleDelete: [Role];
+    roleUpdate: [Role, Role];
+    typingStart: [Channel | PartialDMChannel, User | PartialUser];
+    userUpdate: [User | PartialUser, User | PartialUser];
+    voiceStateUpdate: [VoiceState, VoiceState];
+    webhookUpdate: [TextChannel];
+    shardDisconnect: [CloseEvent, number];
+    shardError: [Error, number];
+    shardReady: [number];
+    shardReconnecting: [number];
+    shardResume: [number, number];
+  }
+
   interface ClientOptions {
     shards?: number | number[] | 'auto';
     shardCount?: number;
@@ -2138,7 +2249,7 @@ declare module 'better-discord.js' {
     messageCacheLifetime?: number;
     messageSweepInterval?: number;
     fetchAllMembers?: boolean;
-    disableEveryone?: boolean;
+    disableMentions?: 'none' | 'all' | 'everyone';
     partials?: PartialTypes[];
     restWsBridgeTimeout?: number;
     restTimeOffset?: number;
@@ -2146,9 +2257,23 @@ declare module 'better-discord.js' {
     restSweepInterval?: number;
     retryLimit?: number;
     presence?: PresenceData;
-    disabledEvents?: WSEventType[];
     ws?: WebSocketOptions;
     http?: HTTPOptions;
+  }
+
+  type ClientPresenceStatus = 'online' | 'idle' | 'dnd';
+
+  interface ClientPresenceStatusData {
+    web?: ClientPresenceStatus;
+    mobile?: ClientPresenceStatus;
+    desktop?: ClientPresenceStatus;
+  }
+
+  interface CloseEvent {
+    wasClean: boolean;
+    code: number;
+    reason: string;
+    target: WebSocket;
   }
 
   type CollectorFilter = (...args: any[]) => boolean;
@@ -2159,7 +2284,8 @@ declare module 'better-discord.js' {
     dispose?: boolean;
   }
 
-  type ColorResolvable = 'DEFAULT'
+  type ColorResolvable =
+    | 'DEFAULT'
     | 'WHITE'
     | 'AQUA'
     | 'GREEN'
@@ -2189,6 +2315,13 @@ declare module 'better-discord.js' {
     | number
     | string;
 
+  interface CrosspostedChannel {
+    channelID: Snowflake;
+    guildID: Snowflake;
+    type: keyof typeof ChannelType;
+    name: string;
+  }
+
   interface DeconstructedSnowflake {
     timestamp: number;
     readonly date: Date;
@@ -2200,20 +2333,42 @@ declare module 'better-discord.js' {
 
   type DefaultMessageNotifications = 'ALL' | 'MENTIONS';
 
-  interface GuildEmojiEditData {
-    name?: string;
-    roles?: Collection<Snowflake, Role> | RoleResolvable[];
-  }
-
   interface EmbedField {
     name: string;
     value: string;
+    inline: boolean;
+  }
+
+  interface EmbedFieldData {
+    name: StringResolvable;
+    value: StringResolvable;
     inline?: boolean;
   }
 
   type EmojiIdentifierResolvable = string | EmojiResolvable;
 
   type EmojiResolvable = Snowflake | GuildEmoji | ReactionEmoji;
+
+  interface ErrorEvent {
+    error: any;
+    message: string;
+    type: string;
+    target: WebSocket;
+  }
+
+  interface EscapeMarkdownOptions {
+    codeBlock?: boolean;
+    inlineCode?: boolean;
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    strikethrough?: boolean;
+    spoiler?: boolean;
+    inlineCodeContent?: boolean;
+    codeBlockContent?: boolean;
+  }
+
+  type ExplicitContentFilterLevel = 'DISABLED' | 'MEMBERS_WITHOUT_ROLES' | 'ALL_MEMBERS';
 
   interface Extendable {
     GuildEmoji: typeof GuildEmoji;
@@ -2241,24 +2396,15 @@ declare module 'better-discord.js' {
   }
 
   interface FetchMembersOptions {
+    user?: UserResolvable | UserResolvable[];
     query?: string;
     limit?: number;
+    withPresences?: boolean;
   }
 
   interface FileOptions {
     attachment: BufferResolvable | Stream;
     name?: string;
-  }
-
-  interface MessageActivity {
-    partyID: string;
-    type: number;
-  }
-
-  interface MessageReference {
-    channelID: string;
-    guildID: string;
-    messageID: string | null;
   }
 
   type GuildAuditLogsAction = keyof GuildAuditLogsActions;
@@ -2302,10 +2448,7 @@ declare module 'better-discord.js' {
     INTEGRATION_DELETE?: number;
   }
 
-  type GuildAuditLogsActionType = 'CREATE'
-    | 'DELETE'
-    | 'UPDATE'
-    | 'ALL';
+  type GuildAuditLogsActionType = 'CREATE' | 'DELETE' | 'UPDATE' | 'ALL';
 
   interface GuildAuditLogsFetchOptions {
     before?: Snowflake | GuildAuditLogsEntry;
@@ -2326,6 +2469,8 @@ declare module 'better-discord.js' {
     WEBHOOK?: string;
     EMOJI?: string;
     MESSAGE?: string;
+    INTEGRATION?: string;
+    UNKNOWN?: string;
   }
 
   type GuildChannelResolvable = Snowflake | GuildChannel;
@@ -2333,7 +2478,10 @@ declare module 'better-discord.js' {
   interface GuildCreateChannelOptions {
     permissionOverwrites?: OverwriteResolvable[] | Collection<Snowflake, OverwriteResolvable>;
     topic?: string;
-    type?: Exclude<keyof typeof ChannelType, 'dm' | 'group' | 'unknown'>;
+    type?: Exclude<
+      keyof typeof ChannelType | ChannelType,
+      'dm' | 'group' | 'unknown' | ChannelType.dm | ChannelType.group | ChannelType.unknown
+    >;
     nsfw?: boolean;
     parent?: ChannelResolvable;
     bitrate?: number;
@@ -2347,20 +2495,15 @@ declare module 'better-discord.js' {
     name?: string;
   }
 
-  interface GuildEmojiCreateOptions {
-    roles?: Collection<Snowflake, Role> | RoleResolvable[];
-    reason?: string;
-  }
-
   interface GuildEditData {
     name?: string;
     region?: string;
-    verificationLevel?: number;
-    explicitContentFilter?: number;
+    verificationLevel?: VerificationLevel;
+    explicitContentFilter?: ExplicitContentFilterLevel;
     defaultMessageNotifications?: DefaultMessageNotifications | number;
     afkChannel?: ChannelResolvable;
     systemChannel?: ChannelResolvable;
-    systemChannelFlags?: SystemChannelFlags;
+    systemChannelFlags?: SystemChannelFlagsResolvable;
     afkTimeout?: number;
     icon?: Base64Resolvable;
     owner?: GuildMemberResolvable;
@@ -2373,7 +2516,18 @@ declare module 'better-discord.js' {
     channel: GuildChannelResolvable | null;
   }
 
-  type GuildFeatures = 'ANIMATED_ICON'
+  interface GuildEmojiCreateOptions {
+    roles?: Collection<Snowflake, Role> | RoleResolvable[];
+    reason?: string;
+  }
+
+  interface GuildEmojiEditData {
+    name?: string;
+    roles?: Collection<Snowflake, Role> | RoleResolvable[];
+  }
+
+  type GuildFeatures =
+    | 'ANIMATED_ICON'
     | 'BANNER'
     | 'COMMERCE'
     | 'DISCOVERABLE'
@@ -2396,7 +2550,7 @@ declare module 'better-discord.js' {
 
   type GuildMemberResolvable = GuildMember | UserResolvable;
 
-  type GuildResolvable = Guild | GuildChannel | GuildMember | Role | Snowflake;
+  type GuildResolvable = Guild | GuildChannel | GuildMember | GuildEmoji | Invite | Role | Snowflake;
 
   interface GuildPruneMembersOptions {
     count?: boolean;
@@ -2406,25 +2560,21 @@ declare module 'better-discord.js' {
   }
 
   interface HTTPOptions {
+    api?: string;
     version?: number;
     host?: string;
     cdn?: string;
     invite?: string;
   }
 
-  type ImageExt = 'webp'
-    | 'png'
-    | 'jpg'
-    | 'gif';
+  type ImageExt = 'webp' | 'png' | 'jpg' | 'gif';
 
-  type ImageSize = 16
-    | 32
-    | 64
-    | 128
-    | 256
-    | 512
-    | 1024
-    | 2048;
+  type ImageSize = 16 | 32 | 64 | 128 | 256 | 512 | 1024 | 2048;
+
+  interface ImageURLOptions {
+    format?: ImageExt;
+    size?: ImageSize;
+  }
 
   interface IntegrationData {
     id: string;
@@ -2441,6 +2591,23 @@ declare module 'better-discord.js' {
     name: string;
   }
 
+  type IntentsString =
+    | 'GUILDS'
+    | 'GUILD_MEMBERS'
+    | 'GUILD_BANS'
+    | 'GUILD_EMOJIS'
+    | 'GUILD_INTEGRATIONS'
+    | 'GUILD_WEBHOOKS'
+    | 'GUILD_INVITES'
+    | 'GUILD_VOICE_STATES'
+    | 'GUILD_PRESENCES'
+    | 'GUILD_MESSAGES'
+    | 'GUILD_MESSAGE_REACTIONS'
+    | 'GUILD_MESSAGE_TYPING'
+    | 'DIRECT_MESSAGES'
+    | 'DIRECT_MESSAGE_REACTIONS'
+    | 'DIRECT_MESSAGE_TYPING';
+
   interface InviteOptions {
     temporary?: boolean;
     maxAge?: number;
@@ -2451,20 +2618,45 @@ declare module 'better-discord.js' {
 
   type InviteResolvable = string;
 
-  type MembershipStates = 'INVITED'
-    | 'ACCEPTED';
+  type MembershipStates = 'INVITED' | 'ACCEPTED';
+
+  type MessageAdditions = MessageEmbed | MessageAttachment | (MessageEmbed | MessageAttachment)[];
+
+  interface MessageActivity {
+    partyID: string;
+    type: number;
+  }
 
   interface MessageCollectorOptions extends CollectorOptions {
     max?: number;
     maxProcessed?: number;
   }
 
-  type MessageAdditions = MessageEmbed | MessageAttachment | (MessageEmbed | MessageAttachment)[];
-
   interface MessageEditOptions {
     content?: string;
     embed?: MessageEmbedOptions | null;
     code?: string | boolean;
+    flags?: BitFieldResolvable<MessageFlagsString>;
+  }
+
+  interface MessageEmbedAuthor {
+    name?: string;
+    url?: string;
+    iconURL?: string;
+    proxyIconURL?: string;
+  }
+
+  interface MessageEmbedFooter {
+    text?: string;
+    iconURL?: string;
+    proxyIconURL?: string;
+  }
+
+  interface MessageEmbedImage {
+    url: string;
+    proxyURL?: string;
+    height?: number;
+    width?: number;
   }
 
   interface MessageEmbedOptions {
@@ -2473,21 +2665,57 @@ declare module 'better-discord.js' {
     url?: string;
     timestamp?: Date | number;
     color?: ColorResolvable;
-    fields?: { name: string; value: string; inline?: boolean; }[];
+    fields?: EmbedFieldData[];
     files?: (MessageAttachment | string | FileOptions)[];
-    author?: { name?: string; url?: string; icon_url?: string; iconURL?: string; };
-    thumbnail?: { url?: string; height?: number; width?: number; };
-    image?: { url?: string; proxy_url?: string; proxyURL?: string; height?: number; width?: number; };
-    video?: { url?: string; height?: number; width?: number; };
-    footer?: { text?: string; icon_url?: string; iconURL?: string; };
+    author?: Partial<MessageEmbedAuthor> & { icon_url?: string; proxy_icon_url?: string };
+    thumbnail?: Partial<MessageEmbedThumbnail> & { proxy_url?: string };
+    image?: Partial<MessageEmbedImage> & { proxy_url?: string };
+    video?: Partial<MessageEmbedVideo> & { proxy_url?: string };
+    footer?: Partial<MessageEmbedFooter> & { icon_url?: string; proxy_icon_url?: string };
   }
+
+  interface MessageEmbedProvider {
+    name: string;
+    url: string;
+  }
+
+  interface MessageEmbedThumbnail {
+    url: string;
+    proxyURL?: string;
+    height?: number;
+    width?: number;
+  }
+
+  interface MessageEmbedVideo {
+    url?: string;
+    proxyURL?: string;
+    height?: number;
+    width?: number;
+  }
+
+  interface MessageEvent {
+    data: WebSocket.Data;
+    type: string;
+    target: WebSocket;
+  }
+
+  type MessageFlagsString = 'CROSSPOSTED' | 'IS_CROSSPOST' | 'SUPPRESS_EMBEDS' | 'SOURCE_MESSAGE_DELETED' | 'URGENT';
+
+  interface MessageMentionOptions {
+    parse?: MessageMentionTypes[];
+    roles?: Snowflake[];
+    users?: Snowflake[];
+  }
+
+  type MessageMentionTypes = 'roles' | 'users' | 'everyone';
 
   interface MessageOptions {
     tts?: boolean;
     nonce?: string;
     content?: string;
     embed?: MessageEmbed | MessageEmbedOptions;
-    disableEveryone?: boolean;
+    disableMentions?: 'none' | 'all' | 'everyone';
+    allowedMentions?: MessageMentionOptions;
     files?: (FileOptions | BufferResolvable | Stream | MessageAttachment)[];
     code?: string | boolean;
     split?: boolean | SplitOptions;
@@ -2496,11 +2724,18 @@ declare module 'better-discord.js' {
 
   type MessageReactionResolvable = MessageReaction | Snowflake;
 
+  interface MessageReference {
+    channelID: string;
+    guildID: string;
+    messageID: string | null;
+  }
+
   type MessageResolvable = Message | Snowflake;
 
   type MessageTarget = TextChannel | DMChannel | GroupDMChannel | User | GuildMember | Webhook | WebhookClient;
 
-  type MessageType = 'DEFAULT'
+  type MessageType =
+    | 'DEFAULT'
     | 'RECIPIENT_ADD'
     | 'RECIPIENT_REMOVE'
     | 'CALL'
@@ -2512,7 +2747,9 @@ declare module 'better-discord.js' {
     | 'USER_PREMIUM_GUILD_SUBSCRIPTION_TIER_1'
     | 'USER_PREMIUM_GUILD_SUBSCRIPTION_TIER_2'
     | 'USER_PREMIUM_GUILD_SUBSCRIPTION_TIER_3'
-    | 'CHANNEL_FOLLOW_ADD';
+    | 'CHANNEL_FOLLOW_ADD'
+    | 'GUILD_DISCOVERY_DISQUALIFIED'
+    | 'GUILD_DISCOVERY_REQUALIFIED';
 
   interface OverwriteData {
     allow?: PermissionResolvable;
@@ -2525,13 +2762,16 @@ declare module 'better-discord.js' {
 
   type OverwriteType = 'member' | 'role';
 
-  interface PermissionFlags extends Record<PermissionString, number> { }
+  interface PermissionFlags extends Record<PermissionString, number> {}
 
-  interface PermissionObject extends Record<PermissionString, boolean> { }
+  interface PermissionObject extends Record<PermissionString, boolean> {}
 
-  interface PermissionOverwriteOption extends Partial<Record<PermissionString, boolean | null>> { }
+  interface PermissionOverwriteOption extends Partial<Record<PermissionString, boolean | null>> {}
 
-  type PermissionString = 'CREATE_INSTANT_INVITE'
+  type PermissionResolvable = BitFieldResolvable<PermissionString>;
+
+  type PermissionString =
+    | 'CREATE_INSTANT_INVITE'
     | 'KICK_MEMBERS'
     | 'BAN_MEMBERS'
     | 'ADMINISTRATOR'
@@ -2550,6 +2790,7 @@ declare module 'better-discord.js' {
     | 'READ_MESSAGE_HISTORY'
     | 'MENTION_EVERYONE'
     | 'USE_EXTERNAL_EMOJIS'
+    | 'VIEW_GUILD_INSIGHTS'
     | 'CONNECT'
     | 'SPEAK'
     | 'MUTE_MEMBERS'
@@ -2562,9 +2803,7 @@ declare module 'better-discord.js' {
     | 'MANAGE_WEBHOOKS'
     | 'MANAGE_EMOJIS';
 
-  interface RecursiveArray<T> extends Array<T | RecursiveArray<T>> { }
-
-  type PermissionResolvable = BitFieldResolvable<PermissionString>;
+  interface RecursiveArray<T> extends Array<T | RecursiveArray<T>> {}
 
   interface PermissionOverwriteOptions {
     allow: PermissionResolvable;
@@ -2587,32 +2826,93 @@ declare module 'better-discord.js' {
 
   type PresenceResolvable = Presence | UserResolvable | Snowflake;
 
-  type ClientPresenceStatus = 'online' | 'idle' | 'dnd';
-
-  interface ClientPresenceStatusData {
-    web?: ClientPresenceStatus;
-    mobile?: ClientPresenceStatus;
-    desktop?: ClientPresenceStatus;
-  }
-
-  type PartialTypes = 'USER'
-    | 'CHANNEL'
-    | 'GUILD_MEMBER'
-    | 'MESSAGE'
-    | 'REACTION';
-
-  type Partialize<T> = {
+  type Partialize<T, O extends string> = {
+    readonly client: Client;
+    readonly createdAt: Date;
+    readonly createdTimestamp: number;
+    deleted: boolean;
     id: string;
     partial: true;
     fetch(): Promise<T>;
   } & {
-    [K in keyof Omit<T, 'id' | 'partial'>]: T[K] | null;
+    [K in keyof Omit<
+      T,
+      'client' | 'createdAt' | 'createdTimestamp' | 'id' | 'partial' | 'fetch' | O
+    >]: T[K] extends Function ? T[K] : T[K] | null; // tslint:disable-line:ban-types
   };
 
-  interface PartialMessage extends Partialize<Message> {}
-  interface PartialChannel extends Partialize<Channel> {}
-  interface PartialGuildMember extends Partialize<GuildMember> {}
-  interface PartialUser extends Partialize<User> {}
+  interface PartialDMChannel
+    extends Partialize<
+      DMChannel,
+      'lastMessage' | 'lastMessageID' | 'messages' | 'recipient' | 'type' | 'typing' | 'typingCount'
+    > {
+    lastMessage: null;
+    lastMessageID: undefined;
+    messages: MessageManager;
+    recipient: User | PartialUser;
+    type: 'dm';
+    readonly typing: boolean;
+    readonly typingCount: number;
+  }
+
+  interface PartialChannelData {
+    id?: number;
+    name: string;
+    topic?: string;
+    type?: ChannelType;
+    parentID?: number;
+    permissionOverwrites?: {
+      id: number | Snowflake;
+      type?: OverwriteType;
+      allow?: PermissionResolvable;
+      deny?: PermissionResolvable;
+    }[];
+  }
+
+  interface PartialGuildMember
+    extends Partialize<
+      GuildMember,
+      'bannable' | 'displayColor' | 'displayHexColor' | 'displayName' | 'guild' | 'kickable' | 'permissions' | 'roles'
+    > {
+    readonly bannable: boolean;
+    readonly displayColor: number;
+    readonly displayHexColor: string;
+    readonly displayName: string;
+    guild: Guild;
+    joinedAt: null;
+    joinedTimestamp: null;
+    readonly kickable: boolean;
+    readonly permissions: GuildMember['permissions'];
+    readonly roles: GuildMember['roles'];
+  }
+
+  interface PartialMessage
+    extends Partialize<
+      Message,
+      'attachments' | 'channel' | 'deletable' | 'editable' | 'mentions' | 'pinnable' | 'system' | 'url'
+    > {
+    attachments: Message['attachments'];
+    channel: Message['channel'];
+    readonly deletable: boolean;
+    readonly editable: boolean;
+    mentions: Message['mentions'];
+    readonly pinnable: boolean;
+    reactions: Message['reactions'];
+    system: boolean;
+    readonly url: string;
+  }
+
+  interface PartialRoleData extends RoleData {
+    id?: number;
+  }
+
+  type PartialTypes = 'USER' | 'CHANNEL' | 'GUILD_MEMBER' | 'MESSAGE' | 'REACTION';
+
+  interface PartialUser extends Partialize<User, 'discriminator' | 'username' | 'tag'> {
+    discriminator: undefined;
+    username: undefined;
+    readonly tag: null;
+  }
 
   type PresenceStatus = ClientPresenceStatus | 'offline';
 
@@ -2690,14 +2990,23 @@ declare module 'better-discord.js' {
 
   type StringResolvable = string | string[] | any;
 
-  type SystemChannelFlagsString = 'WELCOME_MESSAGE_DISABLED'
-    | 'BOOST_MESSAGE_DISABLED';
+  type SystemChannelFlagsString = 'WELCOME_MESSAGE_DISABLED' | 'BOOST_MESSAGE_DISABLED';
 
   type SystemChannelFlagsResolvable = BitFieldResolvable<SystemChannelFlagsString>;
 
   type TargetUser = number;
 
+  interface TypingData {
+    user: User | PartialUser;
+    since: Date;
+    lastTimestamp: Date;
+    elapsedTime: number;
+    timeout: NodeJS.Timeout;
+  }
+
   type UserResolvable = User | Snowflake | Message | GuildMember | string;
+
+  type VerificationLevel = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'VERY_HIGH';
 
   type VoiceStatus = number;
 
@@ -2714,7 +3023,8 @@ declare module 'better-discord.js' {
     tts?: boolean;
     nonce?: string;
     embeds?: (MessageEmbed | object)[];
-    disableEveryone?: boolean;
+    disableMentions?: 'none' | 'all' | 'everyone';
+    allowedMentions?: MessageMentionOptions;
     files?: (FileOptions | BufferResolvable | Stream | MessageAttachment)[];
     code?: string | boolean;
     split?: boolean | SplitOptions;
@@ -2725,13 +3035,17 @@ declare module 'better-discord.js' {
   interface WebSocketOptions {
     large_threshold?: number;
     compress?: boolean;
+    intents?: BitFieldResolvable<IntentsString> | number;
   }
 
-  type WSEventType = 'READY'
+  type WSEventType =
+    | 'READY'
     | 'RESUMED'
     | 'GUILD_CREATE'
     | 'GUILD_DELETE'
     | 'GUILD_UPDATE'
+    | 'INVITE_CREATE'
+    | 'INVITE_DELETE'
     | 'GUILD_MEMBER_ADD'
     | 'GUILD_MEMBER_REMOVE'
     | 'GUILD_MEMBER_UPDATE'
@@ -2754,24 +3068,13 @@ declare module 'better-discord.js' {
     | 'MESSAGE_REACTION_ADD'
     | 'MESSAGE_REACTION_REMOVE'
     | 'MESSAGE_REACTION_REMOVE_ALL'
+    | 'MESSAGE_REACTION_REMOVE_EMOJI'
     | 'USER_UPDATE'
     | 'PRESENCE_UPDATE'
-    | 'VOICE_STATE_UPDATE'
     | 'TYPING_START'
     | 'VOICE_STATE_UPDATE'
     | 'VOICE_SERVER_UPDATE'
     | 'WEBHOOKS_UPDATE';
 
-  type MessageEvent = { data: WebSocket.Data; type: string; target: WebSocket; };
-  type CloseEvent = { wasClean: boolean; code: number; reason: string; target: WebSocket; };
-  type ErrorEvent = { error: any, message: string, type: string, target: WebSocket; };
-
-  interface CrosspostedChannel {
-    channelID: Snowflake;
-    guildID: Snowflake;
-    type: keyof typeof ChannelType;
-    name: string;
-  }
-
-//#endregion
+  //#endregion
 }

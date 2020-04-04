@@ -1,10 +1,10 @@
 'use strict';
 
+const APIMessage = require('./APIMessage');
+const Channel = require('./Channel');
 const { WebhookTypes } = require('../util/Constants');
 const DataResolver = require('../util/DataResolver');
 const Snowflake = require('../util/Snowflake');
-const Channel = require('./Channel');
-const APIMessage = require('./APIMessage');
 
 /**
  * Represents a webhook.
@@ -70,7 +70,7 @@ class Webhook {
        * The owner of the webhook
        * @type {?User|Object}
        */
-      this.owner = this.client.users ? this.client.users.get(data.user.id) : data.user;
+      this.owner = this.client.users ? this.client.users.cache.get(data.user.id) : data.user;
     } else {
       this.owner = null;
     }
@@ -84,9 +84,10 @@ class Webhook {
    * @property {boolean} [tts=false] Whether or not the message should be spoken aloud
    * @property {string} [nonce=''] The nonce for the message
    * @property {Object[]} [embeds] An array of embeds for the message
+   * @property {MessageMentionOptions} [allowedMentions] Which mentions should be parsed from the message content
    * (see [here](https://discordapp.com/developers/docs/resources/channel#embed-object) for more details)
-   * @property {boolean} [disableEveryone=this.client.options.disableEveryone] Whether or not @everyone and @here
-   * should be replaced with plain-text
+   * @property {DisableMentionType} [disableMentions=this.client.options.disableMentions] Whether or not all mentions or
+   * everyone/here mentions should be sanitized to prevent unexpected mentions
    * @property {FileOptions[]|string[]} [files] Files to send with the message
    * @property {string|boolean} [code] Language for optional codeblock formatting to apply
    * @property {boolean|SplitOptions} [split=false] Whether or not the message should be split into multiple messages if
@@ -149,15 +150,19 @@ class Webhook {
     }
 
     const { data, files } = await apiMessage.resolveFiles();
-    return this.client.api.webhooks(this.id, this.token).post({
-      data, files,
-      query: { wait: true },
-      auth: false,
-    }).then(d => {
-      const channel = this.client.channels ? this.client.channels.get(d.channel_id) : undefined;
-      if (!channel) return d;
-      return channel.messages.add(d, false);
-    });
+    return this.client.api
+      .webhooks(this.id, this.token)
+      .post({
+        data,
+        files,
+        query: { wait: true },
+        auth: false,
+      })
+      .then(d => {
+        const channel = this.client.channels ? this.client.channels.cache.get(d.channel_id) : undefined;
+        if (!channel) return d;
+        return channel.messages.add(d, false);
+      });
   }
 
   /**
@@ -178,11 +183,14 @@ class Webhook {
    * }).catch(console.error);
    */
   sendSlackMessage(body) {
-    return this.client.api.webhooks(this.id, this.token).slack.post({
-      query: { wait: true },
-      auth: false,
-      data: body,
-    }).then(data => data.toString() === 'ok');
+    return this.client.api
+      .webhooks(this.id, this.token)
+      .slack.post({
+        query: { wait: true },
+        auth: false,
+        data: body,
+      })
+      .then(data => data.toString() === 'ok');
   }
 
   /**
@@ -195,7 +203,7 @@ class Webhook {
    * @returns {Promise<Webhook>}
    */
   async edit({ name = this.name, avatar, channel }, reason) {
-    if (avatar && (typeof avatar === 'string' && !avatar.startsWith('data:'))) {
+    if (avatar && typeof avatar === 'string' && !avatar.startsWith('data:')) {
       avatar = await DataResolver.resolveImage(avatar);
     }
     if (channel) channel = channel instanceof Channel ? channel.id : channel;
@@ -256,17 +264,8 @@ class Webhook {
   }
 
   static applyToClass(structure) {
-    for (const prop of [
-      'send',
-      'sendSlackMessage',
-      'edit',
-      'delete',
-      'createdTimestamp',
-      'createdAt',
-      'url',
-    ]) {
-      Object.defineProperty(structure.prototype, prop,
-        Object.getOwnPropertyDescriptor(Webhook.prototype, prop));
+    for (const prop of ['send', 'sendSlackMessage', 'edit', 'delete', 'createdTimestamp', 'createdAt', 'url']) {
+      Object.defineProperty(structure.prototype, prop, Object.getOwnPropertyDescriptor(Webhook.prototype, prop));
     }
   }
 }

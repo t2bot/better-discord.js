@@ -74,7 +74,7 @@ class ReactionCollector extends Collector {
 
     this.on('remove', (reaction, user) => {
       this.total--;
-      if (!this.collected.some(r => r.users.has(user.id))) this.users.delete(user.id);
+      if (!this.collected.some(r => r.users.cache.has(user.id))) this.users.delete(user.id);
     });
   }
 
@@ -118,8 +118,7 @@ class ReactionCollector extends Collector {
      * @param {MessageReaction} reaction The reaction that was removed
      * @param {User} user The user that removed the reaction
      */
-    if (this.collected.has(ReactionCollector.key(reaction)) &&
-        this.users.has(user.id)) {
+    if (this.collected.has(ReactionCollector.key(reaction)) && this.users.has(user.id)) {
       this.emit('remove', reaction, user);
     }
     return reaction.count ? null : ReactionCollector.key(reaction);

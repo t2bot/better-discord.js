@@ -1,25 +1,31 @@
 'use strict';
 
-const DataStore = require('./DataStore');
+const BaseManager = require('./BaseManager');
 const { Presence } = require('../structures/Presence');
 
 /**
- * Stores presences.
- * @extends {DataStore}
+ * Manages API methods for Presences and holds their cache.
+ * @extends {BaseManager}
  */
-class PresenceStore extends DataStore {
+class PresenceManager extends BaseManager {
   constructor(client, iterable) {
     super(client, iterable, Presence);
   }
+
+  /**
+   * The cache of Presences
+   * @type {Collection<Snowflake, Presence>}
+   * @name PresenceManager#cache
+   */
 
   add(data, guild, cache) {
     if (typeof guild === 'boolean') {
       cache = guild;
       guild = undefined;
     }
-    const existing = this.get(data.user.id);
-    const ret = existing ? existing.patch(data) : super.add(data, cache, { id: data.user.id });
-    if (guild) guild.presences.set(data.user.id, ret);
+    const existing = this.cache.get(data.user.id);
+    const ret =  existing ? existing.patch(data) : super.add(data, cache, { id: data.user.id });
+    if (guild) guild.presences.cache.set(data.user.id, ret);
     return ret;
   }
 
@@ -32,10 +38,10 @@ class PresenceStore extends DataStore {
    */
 
   /**
-    * Resolves a PresenceResolvable to a Presence object.
-    * @param {PresenceResolvable} presence The presence resolvable to resolve
-    * @returns {?Presence}
-    */
+   * Resolves a PresenceResolvable to a Presence object.
+   * @param {PresenceResolvable} presence The presence resolvable to resolve
+   * @returns {?Presence}
+   */
   resolve(presence) {
     const presenceResolvable = super.resolve(presence);
     if (presenceResolvable) return presenceResolvable;
@@ -44,16 +50,16 @@ class PresenceStore extends DataStore {
   }
 
   /**
-    * Resolves a PresenceResolvable to a Presence ID string.
-    * @param {PresenceResolvable} presence The presence resolvable to resolve
-    * @returns {?Snowflake}
-    */
+   * Resolves a PresenceResolvable to a Presence ID string.
+   * @param {PresenceResolvable} presence The presence resolvable to resolve
+   * @returns {?Snowflake}
+   */
   resolveID(presence) {
     const presenceResolvable = super.resolveID(presence);
     if (presenceResolvable) return presenceResolvable;
     const userResolvable = this.client.users.resolveID(presence);
-    return this.has(userResolvable) ? userResolvable : null;
+    return this.cache.has(userResolvable) ? userResolvable : null;
   }
 }
 
-module.exports = PresenceStore;
+module.exports = PresenceManager;

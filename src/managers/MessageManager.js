@@ -1,28 +1,32 @@
 'use strict';
 
-const DataStore = require('./DataStore');
-const Collection = require('../util/Collection');
+const BaseManager = require('./BaseManager');
 const Message = require('../structures/Message');
+const Collection = require('../util/Collection');
+const LimitedCollection = require('../util/LimitedCollection');
 
 /**
- * Stores messages for text-based channels.
- * @extends {DataStore}
+ * Manages API methods for Messages and holds their cache.
+ * @extends {BaseManager}
  */
-class MessageStore extends DataStore {
+class MessageManager extends BaseManager {
   constructor(channel, iterable) {
-    super(channel.client, iterable, Message);
+    super(channel.client, iterable, Message, LimitedCollection, channel.client.options.messageCacheMaxSize);
+    /**
+     * The channel that the messages belong to
+     * @type {TextBasedChannel}
+     */
     this.channel = channel;
   }
 
+  /**
+   * The cache of Messages
+   * @type {Collection<Snowflake, Message>}
+   * @name MessageManager#cache
+   */
+
   add(data, cache) {
     return super.add(data, cache, { extras: [this.channel] });
-  }
-
-  set(key, value) {
-    const maxSize = this.client.options.messageCacheMaxSize;
-    if (maxSize === 0) return;
-    if (this.size >= maxSize && maxSize > 0) this.delete(this.firstKey());
-    super.set(key, value);
   }
 
   /**
@@ -90,35 +94,40 @@ class MessageStore extends DataStore {
    */
 
   /**
-    * Resolves a MessageResolvable to a Message object.
-    * @method resolve
-    * @memberof MessageStore
-    * @instance
-    * @param {MessageResolvable} message The message resolvable to resolve
-    * @returns {?Message}
-    */
+   * Resolves a MessageResolvable to a Message object.
+   * @method resolve
+   * @memberof MessageManager
+   * @instance
+   * @param {MessageResolvable} message The message resolvable to resolve
+   * @returns {?Message}
+   */
 
   /**
-    * Resolves a MessageResolvable to a Message ID string.
-    * @method resolveID
-    * @memberof MessageStore
-    * @instance
-    * @param {MessageResolvable} message The message resolvable to resolve
-    * @returns {?Snowflake}
-    */
+   * Resolves a MessageResolvable to a Message ID string.
+   * @method resolveID
+   * @memberof MessageManager
+   * @instance
+   * @param {MessageResolvable} message The message resolvable to resolve
+   * @returns {?Snowflake}
+   */
 
   /**
    * Deletes a message, even if it's not cached.
    * @param {MessageResolvable} message The message to delete
    * @param {string} [reason] Reason for deleting this message, if it does not belong to the client user
    */
-  async remove(message, reason) {
+  async delete(message, reason) {
     message = this.resolveID(message);
-    if (message) await this.client.api.channels(this.channel.id).messages(message).delete({ reason });
+    if (message) {
+      await this.client.api
+        .channels(this.channel.id)
+        .messages(message)
+        .delete({ reason });
+    }
   }
 
   async _fetchId(messageID, cache) {
-    const existing = this.get(messageID);
+    const existing = this.cache.get(messageID);
     if (existing && !existing.partial) return existing;
     const data = await this.client.api.channels[this.channel.id].messages[messageID].get();
     return this.add(data, cache);
@@ -132,4 +141,4 @@ class MessageStore extends DataStore {
   }
 }
 
-module.exports = MessageStore;
+module.exports = MessageManager;

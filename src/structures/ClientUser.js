@@ -1,8 +1,8 @@
 'use strict';
 
-const Structures = require('../util/Structures');
 const DataResolver = require('../util/DataResolver');
 const RelationshipStore = require('../stores/RelationshipStore');
+const Structures = require('../util/Structures');
 
 /**
  * Represents the logged in client's Discord user.
@@ -54,7 +54,9 @@ class ClientUser extends Structures.get('User') {
   }
 
   edit(data) {
-    return this.client.api.users('@me').patch({ data })
+    return this.client.api
+      .users('@me')
+      .patch({ data })
       .then(newData => {
         this.client.token = newData.token;
         const { updated } = this.client.actions.UserUpdate.handle(newData);

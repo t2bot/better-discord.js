@@ -1,12 +1,12 @@
 'use strict';
 
 const EventEmitter = require('events');
+const WebSocketShard = require('./WebSocketShard');
+const PacketHandlers = require('./handlers');
 const { Error: DJSError } = require('../../errors');
 const Collection = require('../../util/Collection');
-const Util = require('../../util/Util');
-const WebSocketShard = require('./WebSocketShard');
 const { Events, ShardEvents, Status, WSCodes, WSEvents } = require('../../util/Constants');
-const PacketHandlers = require('./handlers');
+const Util = require('../../util/Util');
 
 const BeforeReadyWhitelist = [
   WSEvents.READY,
@@ -18,7 +18,9 @@ const BeforeReadyWhitelist = [
   WSEvents.GUILD_MEMBER_REMOVE,
 ];
 
-const UNRECOVERABLE_CLOSE_CODES = [4004, 4010, 4011];
+const UNRECOVERABLE_CLOSE_CODES = Object.keys(WSCodes)
+  .slice(1)
+  .map(Number);
 const UNRESUMABLE_CLOSE_CODES = [1000, 4006, 4007];
 
 /**
@@ -160,24 +162,19 @@ class WebSocketManager extends EventEmitter {
     Total: ${total}
     Remaining: ${remaining}`);
 
-    const { shards } = this.client.options;
+    this.gateway = `${gatewayURL}/`;
+
+    let { shards } = this.client.options;
 
     if (shards === 'auto') {
       this.debug(`Using the recommended shard count provided by Discord: ${recommendedShards}`);
       this.totalShards = this.client.options.shardCount = recommendedShards;
-      if (!this.client.options.shards.length) {
-        this.client.options.shards = Array.from({ length: recommendedShards }, (_, i) => i);
-      }
+      shards = this.client.options.shards = Array.from({ length: recommendedShards }, (_, i) => i);
     }
 
-    if (Array.isArray(shards)) {
-      this.totalShards = shards.length;
-      this.debug(`Spawning shards: ${shards.join(', ')}`);
-      this.shardQueue = new Set(shards.map(id => new WebSocketShard(this, id)));
-    } else {
-      this.debug(`Spawning ${this.totalShards} shards`);
-      this.shardQueue = new Set(Array.from({ length: this.totalShards }, (_, id) => new WebSocketShard(this, id)));
-    }
+    this.totalShards = shards.length;
+    this.debug(`Spawning shards: ${shards.join(', ')}`);
+    this.shardQueue = new Set(shards.map(id => new WebSocketShard(this, id)));
 
     await this._handleSessionLimit(remaining, reset_after);
 
@@ -242,7 +239,7 @@ class WebSocketManager extends EventEmitter {
           this.debug(`Session ID is present, attempting an immediate reconnect...`, shard);
           this.reconnect(true);
         } else {
-          shard.destroy(undefined, true);
+          shard.destroy({ reset: true, emit: false, log: false });
           this.reconnect();
         }
       });
@@ -252,8 +249,6 @@ class WebSocketManager extends EventEmitter {
       });
 
       shard.on(ShardEvents.DESTROYED, () => {
-        shard._cleanupConnection();
-
         this.debug('Shard was destroyed but no WebSocket connection was present! Reconnecting...', shard);
 
         this.client.emit(Events.SHARD_RECONNECTING, shard.id);
@@ -349,7 +344,7 @@ class WebSocketManager extends EventEmitter {
     this.debug(`Manager was destroyed. Called by:\n${new Error('MANAGER_DESTROYED').stack}`);
     this.destroyed = true;
     this.shardQueue.clear();
-    for (const shard of this.shards.values()) shard.destroy(1000, true);
+    for (const shard of this.shards.values()) shard.destroy({ closeCode: 1000, reset: true, emit: false, log: false });
   }
 
   /**
@@ -396,7 +391,7 @@ class WebSocketManager extends EventEmitter {
       });
     }
 
-    if (packet && !this.client.options.disabledEvents.includes(packet.t) && PacketHandlers[packet.t]) {
+    if (packet && PacketHandlers[packet.t]) {
       PacketHandlers[packet.t](this.client, packet, shard);
     }
 
@@ -417,7 +412,7 @@ class WebSocketManager extends EventEmitter {
 
     if (this.client.options.fetchAllMembers) {
       try {
-        const promises = this.client.guilds.map(guild => {
+        const promises = this.client.guilds.cache.map(guild => {
           if (guild.available) return guild.members.fetch();
           // Return empty promise if guild is unavailable
           return Promise.resolve();
