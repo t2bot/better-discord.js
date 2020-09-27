@@ -22,6 +22,7 @@ const browser = (exports.browser = typeof window !== 'undefined');
  * @property {boolean} [fetchAllMembers=false] Whether to cache all guild members and users upon startup, as well as
  * upon joining a guild (should be avoided whenever possible)
  * @property {DisableMentionType} [disableMentions='none'] Default value for {@link MessageOptions#disableMentions}
+ * @property {MessageMentionOptions} [allowedMentions] Default value for {@link MessageOptions#allowedMentions}
  * @property {PartialType[]} [partials] Structures allowed to be partial. This means events can be emitted even when
  * they're missing all the data for a particular structure. See the "Partials" topic listed in the sidebar for some
  * important usage information, as partials require you to put checks in place when handling data.
@@ -55,11 +56,12 @@ exports.DefaultOptions = {
   /**
    * WebSocket options (these are left as snake_case to match the API)
    * @typedef {Object} WebsocketOptions
-   * @property {number} [large_threshold=250] Number of members in a guild to be considered large
+   * @property {number} [large_threshold=50] Number of members in a guild after which offline users will no longer be
+   * sent in the initial guild member list, must be between 50 and 250
    * @property {IntentsResolvable} [intents] Intents to enable for this connection
    */
   ws: {
-    large_threshold: 250,
+    large_threshold: 50,
     compress: false,
     properties: {
       $os: browser ? 'browser' : process.platform,
@@ -73,13 +75,13 @@ exports.DefaultOptions = {
    * HTTP options
    * @typedef {Object} HTTPOptions
    * @property {number} [version=7] API version to use
-   * @property {string} [api='https://discordapp.com/api'] Base url of the API
+   * @property {string} [api='https://discord.com/api'] Base url of the API
    * @property {string} [cdn='https://cdn.discordapp.com'] Base url of the CDN
    * @property {string} [invite='https://discord.gg'] Base url of invites
    */
   http: {
     version: 7,
-    api: 'https://discordapp.com/api',
+    api: 'https://discord.com/api',
     cdn: 'https://cdn.discordapp.com',
     invite: 'https://discord.gg',
   },
@@ -98,9 +100,9 @@ exports.WSCodes = {
   4014: 'DISALLOWED_INTENTS',
 };
 
-const AllowedImageFormats = ['webp', 'png', 'jpg', 'gif'];
+const AllowedImageFormats = ['webp', 'png', 'jpg', 'jpeg', 'gif'];
 
-const AllowedImageSizes = Array.from({ length: 8 }, (e, i) => 2 ** (i + 4));
+const AllowedImageSizes = Array.from({ length: 9 }, (e, i) => 2 ** (i + 4));
 
 function makeImageUrl(root, { format = 'webp', size } = {}) {
   if (format && !AllowedImageFormats.includes(format)) throw new Error('IMAGE_FORMAT', format);
@@ -110,11 +112,11 @@ function makeImageUrl(root, { format = 'webp', size } = {}) {
 /**
  * Options for Image URLs.
  * @typedef {Object} ImageURLOptions
- * @property {string} [format] One of `webp`, `png`, `jpg`, `gif`. If no format is provided,
+ * @property {string} [format] One of `webp`, `png`, `jpg`, `jpeg`, `gif`. If no format is provided,
  * defaults to `webp`.
  * @property {boolean} [dynamic] If true, the format will dynamically change to `gif` for
  * animated avatars; the default is false.
- * @property {number} [size] One of `16`, `32`, `64`, `128`, `256`, `512`, `1024`, `2048`
+ * @property {number} [size] One of `16`, `32`, `64`, `128`, `256`, `512`, `1024`, `2048`, `4096`
  */
 
 exports.Endpoints = {
@@ -422,7 +424,6 @@ exports.MessageTypes = [
   'USER_PREMIUM_GUILD_SUBSCRIPTION_TIER_2',
   'USER_PREMIUM_GUILD_SUBSCRIPTION_TIER_3',
   'CHANNEL_FOLLOW_ADD',
-  // 13 isn't yet documented
   null,
   'GUILD_DISCOVERY_DISQUALIFIED',
   'GUILD_DISCOVERY_REQUALIFIED',

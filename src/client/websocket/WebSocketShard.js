@@ -90,6 +90,7 @@ class WebSocketShard extends EventEmitter {
 
     /**
      * Contains the rate limit queue and metadata
+     * @name WebSocketShard#ratelimit
      * @type {Object}
      * @private
      */
@@ -105,6 +106,7 @@ class WebSocketShard extends EventEmitter {
 
     /**
      * The WebSocket connection for the current shard
+     * @name WebSocketShard#connection
      * @type {?WebSocket}
      * @private
      */
@@ -117,6 +119,7 @@ class WebSocketShard extends EventEmitter {
 
     /**
      * The compression to use
+     * @name WebSocketShard#inflate
      * @type {?Inflate}
      * @private
      */
@@ -124,6 +127,7 @@ class WebSocketShard extends EventEmitter {
 
     /**
      * The HELLO timeout
+     * @name WebSocketShard#helloTimeout
      * @type {?NodeJS.Timer}
      * @private
      */
@@ -131,6 +135,7 @@ class WebSocketShard extends EventEmitter {
 
     /**
      * If the manager attached its event handlers on the shard
+     * @name WebSocketShard#eventsAttached
      * @type {boolean}
      * @private
      */
@@ -138,6 +143,7 @@ class WebSocketShard extends EventEmitter {
 
     /**
      * A set of guild IDs this shard expects to receive
+     * @name WebSocketShard#expectedGuilds
      * @type {?Set<string>}
      * @private
      */
@@ -145,6 +151,7 @@ class WebSocketShard extends EventEmitter {
 
     /**
      * The ready timeout
+     * @name WebSocketShard#readyTimeout
      * @type {?NodeJS.Timer}
      * @private
      */
@@ -152,6 +159,7 @@ class WebSocketShard extends EventEmitter {
 
     /**
      * Time when the WebSocket connection was opened
+     * @name WebSocketShard#connectedAt
      * @type {number}
      * @private
      */
@@ -414,6 +422,7 @@ class WebSocketShard extends EventEmitter {
         this.identify();
         break;
       case OPCodes.RECONNECT:
+        this.debug('[RECONNECT] Discord asked us to reconnect');
         this.destroy({ closeCode: 4000 });
         break;
       case OPCodes.INVALID_SESSION:
@@ -653,7 +662,7 @@ class WebSocketShard extends EventEmitter {
   /**
    * Adds a packet to the queue to be sent to the gateway.
    * <warn>If you use this method, make sure you understand that you need to provide
-   * a full [Payload](https://discordapp.com/developers/docs/topics/gateway#commands-and-events-gateway-commands).
+   * a full [Payload](https://discord.com/developers/docs/topics/gateway#commands-and-events-gateway-commands).
    * Do not use this method if you don't know what you're doing.</warn>
    * @param {Object} data The full packet to send
    * @param {boolean} [important=false] If this packet should be added first in queue

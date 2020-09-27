@@ -1,8 +1,8 @@
 'use strict';
 
 const https = require('https');
+const FormData = require('@discordjs/form-data');
 const AbortController = require('abort-controller');
-const FormData = require('form-data');
 const fetch = require('node-fetch');
 const { browser, UserAgent } = require('../util/Constants');
 
@@ -18,8 +18,9 @@ class APIRequest {
 
     let queryString = '';
     if (options.query) {
-      // Filter out undefined query options
-      const query = Object.entries(options.query).filter(([, value]) => value !== null && typeof value !== 'undefined');
+      const query = Object.entries(options.query)
+        .filter(([, value]) => ![null, 'null', 'undefined'].includes(value) && typeof value !== 'undefined')
+        .flatMap(([key, value]) => (Array.isArray(value) ? value.map(v => [key, v]) : [[key, value]]));
       queryString = new URLSearchParams(query).toString();
     }
     this.path = `${path}${queryString && `?${queryString}`}`;
