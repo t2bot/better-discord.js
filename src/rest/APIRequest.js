@@ -42,7 +42,7 @@ class APIRequest {
     if (!browser) {
       if (!isBot) {
         const ua = require('useragent-generator');
-        headers['User-Agent'] = ua.chrome('79.0.3945.117');
+        headers['User-Agent'] = ua.chrome('87.0.4280');
       } else {
         headers['User-Agent'] = UserAgent;
       }

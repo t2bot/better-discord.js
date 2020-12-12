@@ -165,6 +165,53 @@ class Webhook {
       });
   }
 
+  async editMessage(oldMessage, content, options) {
+    let apiMessage;
+
+    if (content instanceof APIMessage) {
+      apiMessage = content.resolveData();
+    } else {
+      apiMessage = APIMessage.create(this, content, options).resolveData();
+      if (Array.isArray(apiMessage.data.content)) {
+        return Promise.all(apiMessage.split().map(this.send.bind(this)));
+      }
+    }
+
+    const { data, files } = await apiMessage.resolveFiles();
+    return this.client.api
+      .webhooks(this.id, this.token)
+      .messages(typeof oldMessage === 'string' ? oldMessage : oldMessage.id)
+      .patch({
+        data,
+        files,
+        query: { wait: true },
+        auth: false,
+      })
+      .then(d => {
+        const channel = this.client.channels ? this.client.channels.cache.get(d.channel_id) : undefined;
+        if (!channel) return d;
+        return channel.messages.add(d, false);
+      });
+  }
+
+  async deleteMessage(oldMessage, options = {}) {
+    if (typeof options !== 'object') return Promise.reject(new TypeError('INVALID_TYPE', 'options', 'object', true));
+    const { timeout = 0, reason } = options;
+    if (timeout <= 0) {
+      return this.client.api
+        .webhooks(this.id, this.token)
+        .messages(typeof oldMessage === 'string' ? oldMessage : oldMessage.id)
+        .delete(reason)
+        .then(() => this);
+    } else {
+      return new Promise(resolve => {
+        this.client.setTimeout(() => {
+          resolve(this.delete({ reason }));
+        }, timeout);
+      });
+    }
+  }
+
   /**
    * Sends a raw slack message with this webhook.
    * @param {Object} body The raw body to send

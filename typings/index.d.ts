@@ -2129,6 +2129,34 @@ declare module 'better-discord.js' {
       options: WebhookMessageOptions & { split: true | SplitOptions },
     ): Promise<Message[]>;
     send(content: StringResolvable, options: WebhookMessageOptions): Promise<Message | Message[]>;
+    editMessage(
+      oldMessage: string | Message,
+      content: APIMessageContentResolvable | (WebhookMessageOptions & { split?: false }) | MessageAdditions,
+    ): Promise<Message>;
+    editMessage(
+      oldMessage: string | Message,
+      options: WebhookMessageOptions & { split: true | SplitOptions },
+    ): Promise<Message[]>;
+    editMessage(
+      oldMessage: string | Message,
+      options: WebhookMessageOptions | APIMessage,
+    ): Promise<Message | Message[]>;
+    editMessage(
+      oldMessage: string | Message,
+      content: StringResolvable,
+      options: (WebhookMessageOptions & { split?: false }) | MessageAdditions,
+    ): Promise<Message>;
+    editMessage(
+      oldMessage: string | Message,
+      content: StringResolvable,
+      options: WebhookMessageOptions & { split: true | SplitOptions },
+    ): Promise<Message[]>;
+    editMessage(
+      oldMessage: string | Message,
+      content: StringResolvable,
+      options: WebhookMessageOptions,
+    ): Promise<Message | Message[]>;
+    deleteMessage(oldMessage: string | Message, options?: { timeout?: number; reason?: string }): Promise<Message>;
     sendSlackMessage(body: object): Promise<boolean>;
   }
 
@@ -2888,7 +2916,15 @@ declare module 'better-discord.js' {
 
   type MessageResolvable = Message | Snowflake;
 
-  type MessageTarget = TextChannel | NewsChannel | DMChannel | GroupDMChannel | User | GuildMember | Webhook | WebhookClient;
+  type MessageTarget =
+    | TextChannel
+    | NewsChannel
+    | DMChannel
+    | GroupDMChannel
+    | User
+    | GuildMember
+    | Webhook
+    | WebhookClient;
 
   type MessageType =
     | 'DEFAULT'

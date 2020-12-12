@@ -610,7 +610,7 @@ class WebSocketShard extends EventEmitter {
       };
     } else {
       const ua = require('useragent-generator');
-      const chromeVersion = '79.0.3945.117';
+      const chromeVersion = '87.0.4280';
       const wsOptions = Object.assign({}, client.options.ws, {
         properties: {
           os: 'Windows',
