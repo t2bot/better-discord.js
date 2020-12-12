@@ -20,6 +20,7 @@ class ActionsManager {
     this.register(require('./InviteCreate'));
     this.register(require('./InviteDelete'));
     this.register(require('./GuildMemberRemove'));
+    this.register(require('./GuildMemberUpdate'));
     this.register(require('./GuildBanRemove'));
     this.register(require('./GuildRoleCreate'));
     this.register(require('./GuildRoleDelete'));
@@ -37,6 +38,7 @@ class ActionsManager {
     this.register(require('./WebhooksUpdate'));
     this.register(require('./RelationshipAdd'));
     this.register(require('./RelationshipRemove'));
+    this.register(require('./TypingStart'));
   }
 
   register(Action) {
