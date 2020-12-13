@@ -277,7 +277,7 @@ class Client extends BaseClient {
     if (!res) {
       return null;
     }
-    const foundGuild = this.guilds.get(res.guild.id);
+    const foundGuild = this.guilds.resolve(res.guild.id);
     if (foundGuild) {
       return foundGuild;
     }
