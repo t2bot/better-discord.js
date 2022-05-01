@@ -7,6 +7,7 @@ class MessageCreateAction extends Action {
   handle(data) {
     const client = this.client;
     if (!client.channels) return {}; // T2B: swallow
+    if (!client.messages) return {}; // T2B: swallow
     const channel = client.channels.cache.get(data.channel_id);
     if (channel) {
       const existing = channel.messages.cache.get(data.id);
