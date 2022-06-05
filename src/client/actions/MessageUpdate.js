@@ -18,6 +18,7 @@ class MessageUpdateAction extends Action {
             timestamp,
             type,
             manager: !!channel.messages,
+            data,
           },
           null,
           2,
